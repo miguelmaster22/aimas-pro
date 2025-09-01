@@ -1,6 +1,6 @@
 services:
   
-  4trust-api:
+  aimas-api:
     restart: always
     env_file:
       - .env
@@ -12,7 +12,7 @@ services:
     networks:
       - web
 
-  4trust-frontend:
+  aimas-frontend:
     restart: always
     env_file:
       - .env

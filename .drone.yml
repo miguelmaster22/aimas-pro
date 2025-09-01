@@ -1,0 +1,42 @@
+kind: pipeline
+type: docker
+name: despliegue
+
+trigger:
+  branch:
+    - main
+  event:
+    - push
+
+steps:
+
+  - name: actualizar repositorio
+    image: alpine/git
+    commands:
+      - git submodule update --init --recursive
+
+  - name: prepare-env
+    image: alpine
+    environment:
+      SECRET_ENV_ALL: { from_secret: SECRET_ENV_ALL }
+
+    commands:
+      - printf "%s" "$SECRET_ENV_ALL" > .env
+
+  
+  - name: construir y lanzar
+    image: docker:24.0.5-cli
+    volumes:
+      - name: docker_socket
+        path: /var/run/docker.sock
+    commands:
+      - docker compose down
+      - docker compose pull
+      - docker compose build --no-cache
+      - docker compose up -d 
+      - docker image prune -f
+
+volumes:
+  - name: docker_socket
+    host:
+      path: /var/run/docker.sock
