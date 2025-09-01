@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "node --openssl-legacy-provider scripts/start ",
     "start": "node --openssl-legacy-provider scripts/start ",
-    "build": "node --openssl-legacy-provider scripts/build  && npx rimraf docs && npx move-cli build docs"
+    "build": "node --openssl-legacy-provider scripts/build  && npx rimraf docs "
   },
   "author": "moreusdt",
   "license": "Apache 2.0",
