@@ -2,6 +2,7 @@ services:
   
   aimas-api:
     restart: always
+    container_name: aimas-api
     env_file:
       - .env
     build:
@@ -31,6 +32,7 @@ services:
 
   aimas-frontend:
     restart: always
+    container_name: aimas-frontend
     env_file:
       - .env
     build:

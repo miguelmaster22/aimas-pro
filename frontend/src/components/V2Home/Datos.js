@@ -3,7 +3,6 @@ import cons from "../../cons.js";
 const BigNumber = require('bignumber.js');
 BigNumber.config({ ROUNDING_MODE: 3 })
 
-
 const Cryptr = require("cryptr");
 const cryptr = new Cryptr(process.env.REACT_APP_ENCR_STO);
 function encryptString(s) {

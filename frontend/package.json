@@ -5,14 +5,24 @@
   "scripts": {
     "dev": "node --openssl-legacy-provider scripts/start ",
     "start": "node --openssl-legacy-provider scripts/start ",
-    "build": "node --openssl-legacy-provider scripts/build  && npx rimraf docs "
+    "build": "node --openssl-legacy-provider scripts/build"
   },
   "author": "moreusdt",
   "license": "Apache 2.0",
   "homepage": "https://moreusdt.com/",
   "dependencies": {
-    "@babel/core": "7.8.4",
     "@metamask/detect-provider": "^1.2.0",
+    "bignumber.js": "^9.3.1",
+    "cryptr": "^6.2.0",
+    "react": "^16.14.0",
+    "react-app-polyfill": "^1.0.6",
+    "react-copy-to-clipboard": "^5.0.2",
+    "react-dom": "^16.14.0",
+    "web3": "^1.6.0"
+  },
+  "devDependencies": {
+    "@babel/core": "7.8.4",
+    "@babel/eslint-parser": "^7.28.0",
     "@svgr/webpack": "4.3.3",
     "@typescript-eslint/eslint-plugin": "^2.34.0",
     "@typescript-eslint/parser": "^2.34.0",
@@ -22,15 +32,9 @@
     "babel-loader": "8.0.6",
     "babel-plugin-named-asset-import": "^0.3.6",
     "babel-preset-react-app": "^9.1.2",
-    "bootstrap": "^4.5.3",
-    "bs58": "^4.0.1",
     "camelcase": "^5.3.1",
     "case-sensitive-paths-webpack-plugin": "2.3.0",
-    "chart.js": "^2.9.4",
     "colorette": "^1.2.1",
-    "cors": "^2.8.5",
-    "crypto-js": "^4.1.1",
-    "cryptr": "^6.2.0",
     "css-loader": "^3.4.2",
     "dotenv": "8.2.0",
     "dotenv-expand": "5.1.0",
@@ -51,46 +55,30 @@
     "jest-environment-jsdom-fourteen": "1.0.1",
     "jest-resolve": "24.9.0",
     "jest-watch-typeahead": "0.4.2",
-    "jquery": "^3.5.1",
     "mini-css-extract-plugin": "0.9.0",
     "optimize-css-assets-webpack-plugin": "5.0.3",
     "pnp-webpack-plugin": "1.6.0",
-    "popper.js": "^1.16.1",
     "postcss": "^8.1.4",
     "postcss-flexbugs-fixes": "4.1.0",
     "postcss-loader": "3.0.0",
     "postcss-normalize": "8.0.1",
     "postcss-preset-env": "6.7.0",
     "postcss-safe-parser": "4.0.1",
-    "react": "^16.14.0",
-    "react-app-polyfill": "^1.0.6",
-    "react-copy-to-clipboard": "^5.0.2",
     "react-dev-utils": "^11.0.4",
-    "react-dom": "^16.14.0",
     "resolve": "1.15.0",
     "resolve-url-loader": "^3.1.2",
+    "sass": "^1.69.5",
     "sass-loader": "8.0.2",
     "semver": "6.3.0",
     "style-loader": "0.23.1",
-    "sweetalert2": "^8.19.0",
     "terser-webpack-plugin": "^4.2.3",
-    "tronweb": "^3.2.6",
     "ts-pnp": "1.1.5",
     "typescript": "^4.0.3",
     "url-loader": "2.3.0",
-    "web3": "^1.6.0",
     "webpack": "4.41.5",
     "webpack-dev-server": "^3.11.0",
     "webpack-manifest-plugin": "2.2.0",
     "workbox-webpack-plugin": "4.3.1"
-  },
-  "devDependencies": {
-    "babel-cli": "^6.26.0",
-    "babel-polyfill": "^6.26.0",
-    "babel-register": "^6.26.0",
-    "move-cli": "^1.2.1",
-    "rimraf": "^2.7.1",
-    "sass": "^1.69.5"
   },
   "browserslist": [
     ">0.2%",
@@ -150,8 +138,5 @@
     "presets": [
       "react-app"
     ]
-  },
-  "eslintConfig": {
-    "extends": "react-app"
   }
 }
