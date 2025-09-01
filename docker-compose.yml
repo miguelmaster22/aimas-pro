@@ -28,7 +28,7 @@ services:
       - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
       - "traefik.http.middlewares.https-redirect.redirectscheme.permanent=true"
 
-      - "traefik.http.services.aimas-a.loadbalancer.server.port=8000"
+      - "traefik.http.services.aimas-api.loadbalancer.server.port=8000"
 
   aimas-frontend:
     restart: always
@@ -58,7 +58,7 @@ services:
       - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
       - "traefik.http.middlewares.https-redirect.redirectscheme.permanent=true"
 
-      - "traefik.http.services.aimas-f.loadbalancer.server.port=3000"
+      - "traefik.http.services.aimas-frontend.loadbalancer.server.port=3000"
 
 networks:
   web:
