@@ -6,3 +6,5 @@ package-lock.json
 .vscode
 .env
 package-lock.json
+
+build
