@@ -7,10 +7,27 @@ services:
     build:
       context: ./api
       dockerfile: Dockerfile
-    ports:
-      - "8000:8000"
     networks:
       - web
+    labels:
+      - "traefik.enable=true"
+      
+      # Router para dominio principal
+      - "traefik.http.routers.aimas-a.rule=Host(`api.aimas.pro`)"
+      - "traefik.http.routers.aimas-a.entrypoints=websecure"
+      - "traefik.http.routers.aimas-a.tls.certresolver=myresolver"
+      - "traefik.http.routers.aimas-a.service=aimas-api"
+
+      # Routers HTTP que redirigen a HTTPS
+      - "traefik.http.routers.aimas-a-http.rule=Host(`api.aimas.pro`)"
+      - "traefik.http.routers.aimas-a-http.entrypoints=web"
+      - "traefik.http.routers.aimas-a-http.middlewares=https-redirect"
+
+      # Middleware para redirigir a HTTPS
+      - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.https-redirect.redirectscheme.permanent=true"
+
+      - "traefik.http.services.aimas-a.loadbalancer.server.port=3000"
 
   aimas-frontend:
     restart: always
@@ -19,10 +36,27 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
     networks:
       - web
+    labels:
+      - "traefik.enable=true"
+      
+      # Router para dominio principal
+      - "traefik.http.routers.aimas-f.rule=Host(`beta.aimas.pro`)"
+      - "traefik.http.routers.aimas-f.entrypoints=websecure"
+      - "traefik.http.routers.aimas-f.tls.certresolver=myresolver"
+      - "traefik.http.routers.aimas-f.service=aimas-frontend"
+
+      # Routers HTTP que redirigen a HTTPS
+      - "traefik.http.routers.aimas-f-http.rule=Host(`beta.aimas.pro`)"
+      - "traefik.http.routers.aimas-f-http.entrypoints=web"
+      - "traefik.http.routers.aimas-f-http.middlewares=https-redirect"
+
+      # Middleware para redirigir a HTTPS
+      - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.https-redirect.redirectscheme.permanent=true"
+
+      - "traefik.http.services.aimas-f.loadbalancer.server.port=3000"
 
 networks:
   web:
