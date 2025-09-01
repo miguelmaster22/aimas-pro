@@ -1,0 +1,29 @@
+services:
+  
+  4trust-api:
+    restart: always
+    env_file:
+      - .env
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    networks:
+      - web
+
+  4trust-frontend:
+    restart: always
+    env_file:
+      - .env
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    networks:
+      - web
+
+networks:
+  web:
+    external: true
