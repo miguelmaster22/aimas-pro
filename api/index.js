@@ -234,6 +234,13 @@ async function iniciarAplicacion() {
 
 }
 
+app.get("/", (req, res) => {
+  res.send("API AIMAS PRO");
+});
+
+app.get('/health', (req, res) => {
+  res.send("ok");
+});
 
 app.get(RUTA, (req, res) => {
   res.send({ online: true });
@@ -450,105 +457,6 @@ function retirableBinario(puntosA, puntosB) {
   let amount = puntosA <= puntosB ? puntosA : puntosB;
 
   return new BigNumber(amount).times(10).dividedBy(100).dp(0).toString(10)
-
-}
-
-async function colectarPuntos(from, hand) {
-
-  result = {
-    puntos: 0,
-    usados: 0,
-    total: 0,
-    personas: 0
-  }
-
-  let personas = 0;
-  let puntos = new BigNumber(0)
-  let user = await selectorBinario(from, true)
-
-  if (user !== undefined) {
-
-    if (user.registered) {
-
-      let array = []
-      let registrados = []
-
-
-      if (hand === 0) {
-        array = [user.left]
-      } else {
-        array = [user.right]
-      }
-
-
-      while (array.length > 0) {
-
-        for (let index = 0; index < array.length; index++) {
-
-          if (array[index] !== WalletVacia && array[index] !== undefined) {
-            let lectura = await selectorBinario(array[index])
-            if (lectura !== undefined) {
-              personas++;
-              if (new BigNumber(lectura.invested).toNumber() > 0) {
-                puntos = puntos.plus(lectura.invested)
-
-              }
-
-              if (lectura.left !== WalletVacia && registrados.indexOf(lectura.left) === -1) {
-                array = array.concat(lectura.left)
-                registrados.push(lectura.left)
-              }
-
-              if (lectura.right !== WalletVacia && registrados.indexOf(lectura.right) === -1) {
-                array = array.concat(lectura.right);
-                registrados.push(lectura.left)
-              }
-
-            } else {
-              console.log("lectura selecor binario indefinido ", array[index])
-            }
-          }
-
-          array.splice(index, 1);
-
-        }
-
-      }
-
-      puntos = puntos.times(50).dividedBy(100)
-
-      //console.log("colectar P: " + puntos.toString(10))
-
-      personas = new BigNumber(personas)
-
-      if (hand === 0) {
-        result = {
-          upline: user.up,
-          dowline: user.left,
-          puntos: puntos.minus(user.lReclamados).plus(user.lExtra).dp(0).toString(10),
-          usados: user.lReclamados,
-          total: puntos.plus(user.lExtra).dp(0).toString(10),
-          crudo: puntos.dp(0).toString(10),
-          personas: personas.toString(10)
-        }
-
-      } else {
-        result = {
-          upline: user.up,
-          dowline: user.right,
-          puntos: puntos.minus(user.rReclamados).plus(user.rExtra).dp(0).toString(10),
-          usados: user.rReclamados,
-          total: puntos.plus(user.lExtra).dp(0).toString(10),
-          crudo: puntos.dp(0).toString(10),
-          personas: personas.toString(10)
-        }
-
-      }
-    }
-
-  }
-
-  return result;
 
 }
 
@@ -847,33 +755,6 @@ async function consultarBinario() {
   //console.log(red)
 
   return appReady
-
-}
-
-async function selectorBinario(wallet, consultaForzada) {
-  wallet = wallet.toLowerCase()
-  //console.log("selector: " + wallet)
-
-  let consulta = undefined;
-
-  consulta = binarioindexado[wallet]
-
-  let userTemp = null;
-
-  try {
-    userTemp = await binario.findOne({ wallet: wallet }, { _id: false })
-
-  } catch (error) {
-    console.log(error.toString())
-  }
-
-  if (consulta === undefined || consultaForzada || userTemp === null) {
-    await consultarUsuario(wallet, true)
-  }
-
-  consulta = binarioindexado[wallet]
-
-  return consulta
 
 }
 
