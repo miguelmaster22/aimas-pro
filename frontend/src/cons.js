@@ -1,24 +1,24 @@
-var proxy = "";
-var API = process.env.REACT_APP_URL_API;
+// Configuration constants for the application
+let proxy = ""; // Proxy URL (empty for direct connection)
+let API = process.env.REACT_APP_URL_API; // API endpoint from environment
 
-const WS = "0x0000000000000000000000000000000000000000"; //0x0000000000000000000000000000000000000000 recibe los huerfanos por defecto
+const WS = "0x0000000000000000000000000000000000000000"; // Default wallet for orphans
 
-var SC = "0x0000000000000000000000000000000000000000"; // Contrato V1
+let SC_Proxy = "0x86bce12014a6c721156C536Be22DA7F30b6F33C1"; // Proxy contract V2 address
 
-var SC_Proxy = "0x86bce12014a6c721156C536Be22DA7F30b6F33C1"; // contrato proxy nuevo v2
+let TOKEN = "0x55d398326f99059fF775485246999027B3197955"; // Token contract address
+let chainId = "0x38"; // BNB mainnet chain ID
 
-var TOKEN = "0x55d398326f99059fF775485246999027B3197955";
-var chainId = "0x38"; // bnb mainnet
+const testnet = false; // Enable testnet configuration
 
-const testnet = false; // habilitar red de pruebas
-
+// Switch to testnet if enabled
 if (testnet) {
-  proxy = "";
-  API = process.env.REACT_APP_URL_API_2;
-  SC = "0xAb304aEbD091c3479C05029AB44f31C32D5dE4bd"; //Nuevo V2
-
-  TOKEN = "0xd5881b890b443be0c609BDFAdE3D8cE886cF9BAc";
-  chainId = "0x61"; // bnb testnet
+  proxy = ""; // No proxy for testnet
+  API = process.env.REACT_APP_URL_API_2; // Testnet API endpoint
+  SC_Proxy = "0x0000000000000000000000000000000000000000"; // Testnet proxy contract address
+  TOKEN = "0xd5881b890b443be0c609BDFAdE3D8cE886cF9BAc"; // Testnet token
+  chainId = "0x61"; // BNB testnet chain ID
 }
 
-export default { proxy, API, WS, SC, SC_Proxy, TOKEN, chainId };
+// Export configuration object
+export default { proxy, API, WS, SC_Proxy, TOKEN, chainId };

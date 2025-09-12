@@ -1,11 +1,19 @@
-import React, { Component } from "react";
-import { CopyToClipboard } from "react-copy-to-clipboard";
-import cons from "../../cons.js";
+/**
+ * Oficina component: Main office/dashboard for user investment and binary system management
+ * Displays user stats, referral links, withdrawal options, and binary network details
+ */
+import React, { Component } from "react"; // React library
+import { CopyToClipboard } from "react-copy-to-clipboard"; // Clipboard copy utility
+import cons from "../../cons.js"; // Configuration constants
 
+// BigNumber for precise decimal calculations
 const BigNumber = require("bignumber.js");
 
+// Encryption utilities for API communication
 const Cryptr = require("cryptr");
 const cryptr = new Cryptr(process.env.REACT_APP_ENCR_STO);
+
+// Encrypt string function for secure data transmission
 function encryptString(s) {
   if (typeof s === "string") {
     return cryptr.encrypt(s);
@@ -14,6 +22,7 @@ function encryptString(s) {
   }
 }
 
+// Wallets component: Displays wallet information in network view
 const Wallets = ({ wallet, migrated, invested, hijos, upline }) => {
   return (
     <>
@@ -32,6 +41,7 @@ const Wallets = ({ wallet, migrated, invested, hijos, upline }) => {
   );
 };
 
+// Main Oficina component class
 export default class Oficina extends Component {
   constructor(props) {
     super(props);

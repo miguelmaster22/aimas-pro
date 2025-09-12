@@ -1,228 +1,170 @@
-import React, { Component } from "react";
-import Web3 from "web3";
-import detectEthereumProvider from '@metamask/detect-provider';
+// Main application component for the binary system frontend
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import Web3 from "web3"; // Web3 library for blockchain interactions
+import detectEthereumProvider from '@metamask/detect-provider'; // Detect MetaMask provider
 
-import HomeV2 from "./components/V2Home";
+import HomeV2 from "./components/V2Home"; // Main home component for V2
+import TronLinkGuide from "./components/MetamaskConect"; // Guide for MetaMask connection
+import cons from "./cons"; // Constants and configuration
 
-import TronLinkGuide from "./components/MetamaskConect";
-import cons from "./cons"
+import abiToken from "./abi/token"; // ABI for token contract
+import abiBinarioProxy from "./abi/binary_proxy"; // ABI for binary proxy contract (version 2)
 
-import abiToken from "./abi/token";
-import abiBinarioProxy from "./abi/binary_proxy"; //version 2 nueevo proxyed
+// Configuration constants
+const addressToken = cons.TOKEN; // Token contract address
+const chainId = cons.chainId; // Blockchain network chain ID
 
+// Main App functional component handling MetaMask connection and routing
+const App = () => {
+  // State management with hooks
+  const [admin, setAdmin] = useState(false); // Admin level of the user
+  const [metamask, setMetamask] = useState(false); // Whether MetaMask is installed
+  const [conectado, setConectado] = useState(false); // Whether connected to blockchain
+  const [currentAccount, setCurrentAccount] = useState("0x0000000000000000000000000000000000000000"); // Current wallet address
+  const [contract, setContract] = useState({
+    web3: null, // Web3 instance
+    contractToken: null, // Token contract instance
+    binaryProxy: null // Binary proxy contract instance
+  });
 
-var addressToken = cons.TOKEN;
-var chainId = cons.chainId;
+  // Ref for interval cleanup
+  const intervalRef = useRef(null);
 
-
-class App extends Component {
-  constructor(props) {
-    super(props);
-
-    this.state = {
-      admin: false,
-      metamask: false,
-      conectado: false,
-      currentAccount: "0x0000000000000000000000000000000000000000",
-      contract: {
-        web3: null,
-        contractToken: null,
-        binaryProxy: null
-      }
-
-    };
-  }
-
-  async componentDidMount() {
-
-    let inicio = setInterval(() => {
-      this.conectar();
+  // Effect hook: Set up interval to check connection on mount, cleanup on unmount
+  useEffect(() => {
+    intervalRef.current = setInterval(() => {
+      conectar(); // Check MetaMask connection every 3 seconds
     }, 3 * 1000);
 
-    this.setState({ intervalo: inicio });
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [conectar]);
 
-  }
-
-  async componentWillUnmount() {
-    clearInterval(this.state.intervalo);
-  }
-
-  async conectar() {
-
+  // Connect to MetaMask and initialize contracts
+  const conectar = useCallback(async () => {
     if (typeof window.ethereum !== 'undefined') {
+      setMetamask(true);
 
-      this.setState({
-        metamask: true
-      })
-
-      await window.ethereum.request({
-        method: 'wallet_switchEthereumChain',
-        params: [{ chainId: chainId }],
-      });
-
-
-      window.ethereum.request({ method: 'eth_requestAccounts' })
-        .then(async (accounts) => {
-
-          const provider = await detectEthereumProvider();
-
-          let web3 = new Web3(provider);
-          let contractToken = new web3.eth.Contract(
-            abiToken,
-            addressToken
-          );
-         
-
-          let binaryProxy = new web3.eth.Contract(
-            abiBinarioProxy,
-            cons.SC_Proxy
-
-          )
-
-          let isAdmin = false;
-          let cuenta = accounts[0] //"0x2198b0D4f54925DCCA173a84708BA284Ac85Cc37"//
-          let level = await binaryProxy.methods.leveling(cuenta).call({ from: cuenta })
-
-          if (level >= 1) {
-
-            if (level <= 4) {
-              isAdmin = "admin"
-            }
-
-            if (level <= 3) {
-              isAdmin = "leader"
-            }
-
-            if (level <= 2) {
-              isAdmin = "subOwner"
-            }
-
-            if (level <= 1) {
-              isAdmin = "owner"
-            }
-          }
-
-          let verWallet = accounts[0];
-          let loc = document.location.href;
-
-
-          if (loc.indexOf('?') > 0 && loc.indexOf('&wallet=') > 0) {
-
-            verWallet = loc.split('?')[1];
-            if (loc.indexOf('=') > 0) {
-              verWallet = verWallet.split('=')[1];
-              if (loc.indexOf('#') > 0) {
-                verWallet = verWallet.split('#')[0];
-              }
-            }
-
-
-            if (loc.indexOf('view') > 0) {
-
-              if (!web3.utils.isAddress(verWallet)) {
-                verWallet = await binaryProxy.methods.idToAddress(verWallet).call({ from: accounts[0] });
-              }
-            }
-
-            
-          }
-
-
-          this.setState({
-            conectado: true,
-            currentAccount: verWallet,
-            admin: isAdmin,
-            contract: {
-              web3: web3,
-              contractToken: contractToken,
-              binaryProxy: binaryProxy
-            }
-          })
-
-        })
-        .catch((error) => {
-          console.error(error)
-          this.setState({
-            conectado: false,
-            admin: false,
-            contract: {
-              web3: null,
-              contractToken: null,
-              binaryProxy: null
-            }
-          })
+      try {
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: chainId }],
         });
 
-    } else {
-      console.log("no se ha detectado Metamask")
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const provider = await detectEthereumProvider();
 
-      this.setState({
+        const web3 = new Web3(provider);
+        const contractToken = new web3.eth.Contract(abiToken, addressToken);
+        const binaryProxy = new web3.eth.Contract(abiBinarioProxy, cons.SC_Proxy);
 
-        metamask: false,
-        conectado: false,
-        admin: false,
-        contract: {
+        let isAdmin = false;
+        const cuenta = accounts[0];
+        const level = await binaryProxy.methods.leveling(cuenta).call({ from: cuenta });
+
+        if (level >= 1) {
+          if (level <= 4) isAdmin = "admin";
+          if (level <= 3) isAdmin = "leader";
+          if (level <= 2) isAdmin = "subOwner";
+          if (level <= 1) isAdmin = "owner";
+        }
+
+        let verWallet = accounts[0];
+        const loc = document.location.href;
+
+        if (loc.includes('?') && loc.includes('&wallet=')) {
+          verWallet = loc.split('?')[1];
+          if (loc.includes('=')) {
+            verWallet = verWallet.split('=')[1];
+            if (loc.includes('#')) {
+              verWallet = verWallet.split('#')[0];
+            }
+          }
+
+          if (loc.includes('view')) {
+            if (!web3.utils.isAddress(verWallet)) {
+              verWallet = await binaryProxy.methods.idToAddress(verWallet).call({ from: accounts[0] });
+            }
+          }
+        }
+
+        setConectado(true);
+        setCurrentAccount(verWallet);
+        setAdmin(isAdmin);
+        setContract({
+          web3,
+          contractToken,
+          binaryProxy
+        });
+      } catch (error) {
+        console.error(error);
+        setConectado(false);
+        setAdmin(false);
+        setContract({
           web3: null,
           contractToken: null,
           binaryProxy: null
-        }
-      })
-
-    }
-
-  }
-
-
-
-
-  render() {
-
-    var ruta = "";
-    var loc = document.location.href;
-
-    var vWallet = "0x0000000000000000000000000000000000000000"
-    //console.log(loc);
-    if (loc.indexOf('?') > 0) {
-
-      ruta = loc.split('?')[1];
-      ruta = ruta.split('&')[0];
-      ruta = ruta.split('=')[0];
-      ruta = ruta.split('#')[0];
-
-      if (loc.indexOf('wallet') > 0) {
-        vWallet = loc.split('?')[1];
-        vWallet = vWallet.split('&')[1];
-        vWallet = vWallet.split('=')[1];
+        });
       }
-
+    } else {
+      console.log("MetaMask not detected");
+      setMetamask(false);
+      setConectado(false);
+      setAdmin(false);
+      setContract({
+        web3: null,
+        contractToken: null,
+        binaryProxy: null
+      });
     }
-
-    if (!this.state.metamask || !this.state.conectado) return (
-      <>
-        <div className="container">
-          <TronLinkGuide installed={this.state.metamask} />
-        </div>
-      </>
-    );
+  }, []);
 
 
-    switch (ruta) {
 
-    
-      case "v2":
-        return (<HomeV2 admin={this.state.admin} view={false} contract={this.state.contract} currentAccount={this.state.currentAccount} />);
+// Parse URL to determine route and wallet for viewing
+const parseUrl = () => {
+  const loc = document.location.href;
+  let ruta = "";
+  let vWallet = "0x0000000000000000000000000000000000000000";
 
-      case "view":
-      case "new_view":
-      case "v2_view":
-        return (<HomeV2 admin={this.state.admin} view={true} contract={this.state.contract} currentAccount={vWallet} />);
+  if (loc.includes('?')) {
+    ruta = loc.split('?')[1].split('&')[0].split('=')[0].split('#')[0];
 
-
-      default:
-        return (<HomeV2 admin={this.state.admin} view={false} contract={this.state.contract} currentAccount={this.state.currentAccount} />);
-      
+    if (loc.includes('wallet')) {
+      vWallet = loc.split('?')[1].split('&')[1].split('=')[1].split('#')[0];
     }
   }
+
+  return { ruta, vWallet };
+};
+
+const { ruta, vWallet } = parseUrl();
+
+// If not connected, show MetaMask guide
+if (!metamask || !conectado) {
+  return (
+    <div className="container">
+      <TronLinkGuide installed={metamask} />
+    </div>
+  );
 }
+
+// Route to appropriate view based on URL
+switch (ruta) {
+  case "v2": // Main V2 view
+    return <HomeV2 admin={admin} view={false} contract={contract} currentAccount={currentAccount} />;
+
+  case "view": // View another user's data
+  case "new_view":
+  case "v2_view":
+    return <HomeV2 admin={admin} view={true} contract={contract} currentAccount={vWallet} />;
+
+  default: // Default to own account view
+    return <HomeV2 admin={admin} view={false} contract={contract} currentAccount={currentAccount} />;
+}
+};
 
 export default App;

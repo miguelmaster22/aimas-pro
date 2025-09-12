@@ -1,47 +1,51 @@
-import React, { Component } from "react";
+// Main home component for V2 binary system dashboard
+import React, { Component } from "react"; // React library
 
+// Import sub-components for different sections
+import CrowdFunding from "./CrowdFunding"; // Crowdfunding/investment component
+import Oficina from "./Oficina"; // Office/admin component
+import Datos from "./Datos"; // Data display component
+import Depositos from "./Depositos"; // Deposits component
+import cons from "../../cons"; // Configuration constants
 
-import CrowdFunding from "./CrowdFunding";
-import Oficina from "./Oficina";
-import Datos from "./Datos";
-import Depositos from "./Depositos";
-import cons from "../../cons";
-
-
+// BigNumber for precise decimal calculations
 const BigNumber = require("bignumber.js");
 
-let intervalo2
-let actualizado = 0
+// Global variables for intervals and update tracking
+let intervalo2; // Interval for periodic updates
+let actualizado = 0; // Update counter
 
+// Main Home component class
 export default class Home extends Component {
 
+  // Constructor: Initialize state and bind methods
   constructor(props) {
     super(props);
 
     this.state = {
-      investor: false
-    }
+      investor: false // Investor data object
+    };
 
     this.Investor = this.Investor.bind(this);
   }
 
+  // Lifecycle: Start periodic data fetching on mount
   componentDidMount() {
-
     setTimeout(() => {
-      this.Investor()
-
-    }, 3 * 1000)
+      this.Investor(); // Initial fetch after 3 seconds
+    }, 3 * 1000);
 
     intervalo2 = setInterval(() => {
-      this.Investor()
-    }, 30 * 1000)
+      this.Investor(); // Fetch every 30 seconds
+    }, 30 * 1000);
   }
 
+  // Lifecycle: Clear interval on unmount
   componentWillUnmount() {
-    clearInterval(intervalo2)
+    clearInterval(intervalo2);
   }
 
-
+  // Fetch and process investor data from blockchain and API
   async Investor() {
 
     let investor = {}

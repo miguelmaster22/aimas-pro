@@ -1,10 +1,16 @@
-import React, { Component } from "react";
-import cons from "../../cons.js";
-const BigNumber = require('bignumber.js');
-BigNumber.config({ ROUNDING_MODE: 3 })
+// Data display and admin panel component for binary system
+import React, { Component } from "react"; // React library
+import cons from "../../cons.js"; // Configuration constants
 
+// BigNumber for precise decimal calculations
+const BigNumber = require('bignumber.js');
+BigNumber.config({ ROUNDING_MODE: 3 }); // Set rounding mode
+
+// Encryption utilities for API communication
 const Cryptr = require("cryptr");
 const cryptr = new Cryptr(process.env.REACT_APP_ENCR_STO);
+
+// Encrypt string function for secure data transmission
 function encryptString(s) {
   if (typeof s === "string") {
     return cryptr.encrypt(s);
@@ -13,6 +19,7 @@ function encryptString(s) {
   }
 }
 
+// Main Datos component class
 export default class Datos extends Component {
   constructor(props) {
     super(props);

@@ -1,115 +1,116 @@
-const express = require("express");
-const cors = require("cors");
-const { Web3 } = require("web3");
-const Cryptr = require("cryptr");
-const bodyParser = require("body-parser");
-const BigNumber = require("bignumber.js");
-const mongoose = require('mongoose');
-const cron = require('node-cron');
-require("dotenv").config();
+/**
+ * API Server for AIMAS PRO Binary System
+ * Handles blockchain interactions, user data management, and binary network calculations
+ */
 
+// Core dependencies
+const express = require("express"); // Web framework
+const cors = require("cors"); // Cross-origin resource sharing
+const { Web3 } = require("web3"); // Web3 library for blockchain
+const Cryptr = require("cryptr"); // Encryption utility
+const bodyParser = require("body-parser"); // Request body parsing
+const BigNumber = require("bignumber.js"); // Precise decimal calculations
+const mongoose = require('mongoose'); // MongoDB ODM
+const cron = require('node-cron'); // Scheduled tasks
+require("dotenv").config(); // Environment variables
+
+// Utility function for delays
 function delay(s) { return new Promise(res => setTimeout(res, s * 1000)); }
 
-const uriMongoDB = process.env.APP_URIMONGODB + "aimas_pro?ssl=true&authSource=admin&retryWrites=true&w=majority"
-const WalletVacia = "0x0000000000000000000000000000000000000000"
-const factorBlock = 1.5
-const factorFail = 30
-const factorPuntos = 100
+// Database and configuration constants
+const uriMongoDB = process.env.APP_URIMONGODB + "aimas_pro?ssl=true&authSource=admin&retryWrites=true&w=majority"; // MongoDB connection string
+const WalletVacia = "0x0000000000000000000000000000000000000000"; // Empty wallet address
+const factorBlock = 1.5; // Gas price multiplier for transactions
+const factorFail = 30; // Gas price for failed transactions
+const factorPuntos = 100; // Points factor for investments
 
-let allbinario = []
-let binarioindexado = []
+// Global data structures for binary network
+let allbinario = []; // All binary users
+let binarioindexado = []; // Indexed binary users
 
-let appReady = false;
+let appReady = false; // Application readiness flag
 
+// Scheduled task: Update binary network every hour
 cron.schedule('0 0 */1 * * *', async () => {
   console.log('running a task every Hour scan Binary');
 
-  appReady = false;
+  appReady = false; // Mark app as not ready during update
 
-  await consultarBinario();
-  await escalarRedV2(["0x04302e4e19552635eadd013efe54e10f30ba1bf2"])
-  await consultarBinario();
-
+  await consultarBinario(); // Fetch current binary data
+  await escalarRedV2(["0x04302e4e19552635eadd013efe54e10f30ba1bf2"]); // Scale network
+  await consultarBinario(); // Refresh data
 
   console.log('end task every Hour ');
 
 }, null, true, 'America/Bogota');
 
 
+// Mongoose schema for binary system user data
 const Schema = mongoose.Schema;
 
 const Binario = new Schema({
-  _id: String,
-  wallet: String,
-  registered: Boolean,
-  invested: String,
-  invested_leader: String,
-  upTo: String,
-  lastUpdate: Number,
-  reclamados: String,
-  referer: String,
-  up: String,
-  left: String,
-  lReclamados: String,
-  lExtra: String,
-  lPersonas: String,
-  lPuntos: String,
-  right: String,
-  rReclamados: String,
-  rExtra: String,
-  rPersonas: String,
-  rPuntos: String,
-  idBlock: Number,
-  idBlock_old: Number,
-  puntosActivos: String,
-  hand: Number,
-  retirableA: Number
-
+  _id: String, // Unique identifier
+  wallet: String, // User's wallet address
+  registered: Boolean, // Registration status
+  invested: String, // Total invested amount
+  invested_leader: String, // Leader investment amount
+  upTo: String, // Maximum earnings potential
+  lastUpdate: Number, // Last update timestamp
+  reclamados: String, // Total claimed points
+  referer: String, // Referrer wallet
+  up: String, // Upline wallet
+  left: String, // Left downline wallet
+  lReclamados: String, // Left claimed points
+  lExtra: String, // Left extra points
+  lPersonas: String, // Left downline count
+  lPuntos: String, // Left total points
+  right: String, // Right downline wallet
+  rReclamados: String, // Right claimed points
+  rExtra: String, // Right extra points
+  rPersonas: String, // Right downline count
+  rPuntos: String, // Right total points
+  idBlock: Number, // Block ID
+  idBlock_old: Number, // Old block ID
+  puntosActivos: String, // Active points
+  hand: Number, // Hand position (0=left, 1=right)
+  retirableA: Number // Withdrawable amount
 });
 
-const binario = mongoose.model('binari_system', Binario, 'binari_system');
+const binario = mongoose.model('binari_system', Binario, 'binari_system'); // Binary system model
 
+// Function to wait for app readiness
 async function evalAplicacion() {
-
   while (!appReady) {
-    await delay(3);
-    console.log("app no lista")
+    await delay(3); // Wait 3 seconds
+    console.log("app no lista"); // App not ready
   }
-
-  //console.log("app: " + appReady)
-
-  return appReady
-
+  return appReady;
 }
 
-
+// Express app setup
 const app = express();
-//app.use(cors())
+//app.use(cors()) // CORS disabled, using custom headers
 app.use(async (req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, GET, PUT");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
+  res.setHeader("Access-Control-Allow-Origin", "*"); // Allow all origins
+  res.setHeader("Access-Control-Allow-Methods", "POST, GET, PUT"); // Allowed methods
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type"); // Allowed headers
   next();
-
 });
 
+app.use(bodyParser.json()); // Parse JSON bodies
 
-app.use(bodyParser.json());
+const port = process.env.PORT || "8000"; // Server port
 
-const port = process.env.PORT || "8000";
+// Contract configuration
+const abiContrato = require("./binaryV2.js"); // ABI for V2 binary contract
+const addressContrato = "0x86bce12014a6c721156C536Be22DA7F30b6F33C1"; // Proxy contract address
+const WALLET_API = "0x6b78C6d2031600dcFAd295359823889b2dbAfd1B"; // API wallet address
 
-const abiContrato = require("./binaryV2.js"); //V2 nuevo
+// Blockchain network configuration
+const RED = process.env.APP_RED || "https://bsc-dataseed.binance.org/"; // Primary RPC endpoint
+let redes = ["https://bsc-dataseed1.binance.org/", "https://bsc-dataseed2.binance.org/", "https://bsc-dataseed3.binance.org/", "https://bsc-dataseed4.binance.org/"]; // Backup RPC endpoints
 
-const addressContrato = "0x86bce12014a6c721156C536Be22DA7F30b6F33C1"; //Contrato Proxy
-
-const WALLET_API = "0x6b78C6d2031600dcFAd295359823889b2dbAfd1B";
-
-const RED = process.env.APP_RED || "https://bsc-dataseed.binance.org/";
-
-let redes = ["https://bsc-dataseed1.binance.org/", "https://bsc-dataseed2.binance.org/", "https://bsc-dataseed3.binance.org/", "https://bsc-dataseed4.binance.org/"]
-
-let account_1_priv = "0x" + process.env.REACT_APP_PRIVATE_KY || null;
+let account_1_priv = "0x" + process.env.REACT_APP_PRIVATE_KY || null; // Private key for transactions
 
 const KEY = process.env.REACT_APP_ENCR_STO || "AAAAAAAAAAAAAAAA";
 const cryptr = new Cryptr(KEY);
@@ -132,31 +133,32 @@ if (account_1_priv === null) {
   account_1_priv = newAccount.privateKey; //
 }
 
+// Add private key to Web3 wallets for transaction signing
 web3.eth.accounts.wallet.add(account_1_priv);
 web3_1.eth.accounts.wallet.add(account_1_priv);
 web3_2.eth.accounts.wallet.add(account_1_priv);
 web3_3.eth.accounts.wallet.add(account_1_priv);
 
+let nonces = 0; // Transaction nonce counter
+let gasPrice = "1000000000"; // Default gas price (1 gwei)
 
-let nonces = 0;
-
-let gasPrice = "1000000000";
-
-let contrato = new web3_1.eth.Contract(abiContrato, addressContrato, { // nuevo proxy
-  from: WALLET_API, // default from address
-  //gasPrice: '3000000000' //defautl gas price
+// Initialize contract instance
+let contrato = new web3_1.eth.Contract(abiContrato, addressContrato, { // New proxy contract
+  from: WALLET_API, // Default sender address
+  //gasPrice: '3000000000' // Default gas price (optional)
 });
 
+// Get current gas price from network
 web3_3.eth
   .getGasPrice()
   .then((g) => {
-    gasPrice = g;
+    gasPrice = g; // Update gas price
   })
   .catch((e) => {
-    console.log(e);
+    console.log(e); // Log errors
   });
 
-nonce(0);
+nonce(0); // Initialize nonce
 
 web3_3.eth.getBalance(WALLET_API).then(async (r) => {
   r = new BigNumber(r).shiftedBy(-18)
@@ -181,22 +183,23 @@ web3_3.eth.getBalance(WALLET_API).then(async (r) => {
 })
 
 async function nonce() {
-  let activo = await web3_3.eth.getTransactionCount(WALLET_API, "pending");
+  let activo = await web3_3.eth.getTransactionCount(WALLET_API, "pending"); // Get pending nonce from network
 
-  gasPrice = new BigNumber(await web3_3.eth.getGasPrice())
+  gasPrice = new BigNumber(await web3_3.eth.getGasPrice()); // Update current gas price
 
   console.log("gas: " + gasPrice.toString(10) + " factor: " + factorBlock);
 
   if (activo > nonces) {
-    nonces = activo;
+    nonces = activo; // Sync with network nonce
   } else {
-    nonces++;
+    nonces++; // Increment local nonce
   }
 
   return nonces;
 }
 
 
+// Encrypt string for secure API communication
 function encryptString(s) {
   if (typeof s === "string") {
     return cryptr.encrypt(s);
@@ -205,6 +208,7 @@ function encryptString(s) {
   }
 }
 
+// Decrypt string for secure API communication
 function decryptString(s) {
   if (typeof s === "string") {
     return cryptr.decrypt(s);
@@ -213,37 +217,32 @@ function decryptString(s) {
   }
 }
 
-iniciarAplicacion()
+iniciarAplicacion(); // Start application initialization
 
 async function iniciarAplicacion() {
-
   if (!appReady) {
     await mongoose.connect(uriMongoDB, {
-      tls: true
+      tls: true // Enable TLS for MongoDB connection
     })
       .then(async () => {
-        console.log("MongoDB Conected");
-
-        console.log(">---- App Ready! -------<")
-
-      })
-
+        console.log("MongoDB Connected"); // Connection successful
+        console.log(">---- App Ready! -------<"); // App initialization complete
+      });
   }
-
   return appReady;
-
 }
 
+// Basic routes
 app.get("/", (req, res) => {
-  res.send("API AIMAS PRO");
+  res.send("API AIMAS PRO"); // Root endpoint
 });
 
 app.get('/health', (req, res) => {
-  res.send("ok");
+  res.send("ok"); // Health check endpoint
 });
 
 app.get(RUTA, (req, res) => {
-  res.send({ online: true });
+  res.send({ online: true }); // API status endpoint
 });
 
 
@@ -732,7 +731,7 @@ async function consultarBinario() {
       console.log("Inicia reduce")
       let inicio = Date.now()
       appReady = false
-      delete binarioindexado;
+      binarioindexado = [];
       binarioindexado = red.reduce((acc, el, index) => {
         acc[el.wallet] = el;
         if (index == red.length - 1) {
