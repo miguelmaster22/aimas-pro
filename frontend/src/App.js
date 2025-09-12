@@ -30,19 +30,6 @@ const App = () => {
   // Ref for interval cleanup
   const intervalRef = useRef(null);
 
-  // Effect hook: Set up interval to check connection on mount, cleanup on unmount
-  useEffect(() => {
-    intervalRef.current = setInterval(() => {
-      conectar(); // Check MetaMask connection every 3 seconds
-    }, 3 * 1000);
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [conectar]);
-
   // Connect to MetaMask and initialize contracts
   const conectar = useCallback(async () => {
     if (typeof window.ethereum !== 'undefined') {
@@ -122,49 +109,60 @@ const App = () => {
     }
   }, []);
 
+  // Effect hook: Set up interval to check connection on mount, cleanup on unmount
+  useEffect(() => {
+    intervalRef.current = setInterval(() => {
+      conectar(); // Check MetaMask connection every 3 seconds
+    }, 3 * 1000);
 
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [conectar]);
 
-// Parse URL to determine route and wallet for viewing
-const parseUrl = () => {
-  const loc = document.location.href;
-  let ruta = "";
-  let vWallet = "0x0000000000000000000000000000000000000000";
+  // Parse URL to determine route and wallet for viewing
+  const parseUrl = () => {
+    const loc = document.location.href;
+    let ruta = "";
+    let vWallet = "0x0000000000000000000000000000000000000000";
 
-  if (loc.includes('?')) {
-    ruta = loc.split('?')[1].split('&')[0].split('=')[0].split('#')[0];
+    if (loc.includes('?')) {
+      ruta = loc.split('?')[1].split('&')[0].split('=')[0].split('#')[0];
 
-    if (loc.includes('wallet')) {
-      vWallet = loc.split('?')[1].split('&')[1].split('=')[1].split('#')[0];
+      if (loc.includes('wallet')) {
+        vWallet = loc.split('?')[1].split('&')[1].split('=')[1].split('#')[0];
+      }
     }
+
+    return { ruta, vWallet };
+  };
+
+  const { ruta, vWallet } = parseUrl();
+
+  // If not connected, show MetaMask guide
+  if (!metamask || !conectado) {
+    return (
+      <div className="container">
+        <TronLinkGuide installed={metamask} />
+      </div>
+    );
   }
 
-  return { ruta, vWallet };
-};
+  // Route to appropriate view based on URL
+  switch (ruta) {
+    case "v2": // Main V2 view
+      return <HomeV2 admin={admin} view={false} contract={contract} currentAccount={currentAccount} />;
 
-const { ruta, vWallet } = parseUrl();
+    case "view": // View another user's data
+    case "new_view":
+    case "v2_view":
+      return <HomeV2 admin={admin} view={true} contract={contract} currentAccount={vWallet} />;
 
-// If not connected, show MetaMask guide
-if (!metamask || !conectado) {
-  return (
-    <div className="container">
-      <TronLinkGuide installed={metamask} />
-    </div>
-  );
-}
-
-// Route to appropriate view based on URL
-switch (ruta) {
-  case "v2": // Main V2 view
-    return <HomeV2 admin={admin} view={false} contract={contract} currentAccount={currentAccount} />;
-
-  case "view": // View another user's data
-  case "new_view":
-  case "v2_view":
-    return <HomeV2 admin={admin} view={true} contract={contract} currentAccount={vWallet} />;
-
-  default: // Default to own account view
-    return <HomeV2 admin={admin} view={false} contract={contract} currentAccount={currentAccount} />;
-}
+    default: // Default to own account view
+      return <HomeV2 admin={admin} view={false} contract={contract} currentAccount={currentAccount} />;
+  }
 };
 
 export default App;
