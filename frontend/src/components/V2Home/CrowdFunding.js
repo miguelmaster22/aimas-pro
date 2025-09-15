@@ -509,7 +509,7 @@ export default class CrowdFunding extends Component {
     }
     migracionProgress = true
 
-    if (!this.props.contract.web3.utils.isAddress(wallet)) {
+    if (!this.props.contract.web3 || !this.props.contract.web3.utils || !this.props.contract.web3.utils.isAddress(wallet)) {
       this.setState({
         ModalTitulo: "CHECK",
         ModalBody: "It is not a valid address"

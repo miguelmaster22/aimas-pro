@@ -387,6 +387,10 @@ export default class Oficina extends Component {
         });
 
       if (peticion.result && !peticion.error) {
+        if (!this.props.contract.web3) {
+          window.alert("Web3 not initialized");
+          return;
+        }
         console.log();
         let tx = await this.props.contract.web3.eth.sendTransaction({
           from: this.props.currentAccount,
@@ -640,8 +644,10 @@ export default class Oficina extends Component {
   }
 
   render() {
-    var { available, invested, link, link2, rango, retirableA, takeProfit } = this.state;
+    let { available, invested, link, link2, rango, retirableA, takeProfit, MIN_RETIRO, nextPay, balanceContract, downLeft, downRight } = this.state;
+    const { currentAccount, contract } = this.props;
 
+  
 
     let takePro = (<button className="btn btn-info btn-lg d-block text-center mx-auto mt-1" disabled>
       Take Profit 
@@ -667,7 +673,7 @@ export default class Oficina extends Component {
 
     );
 
-    if (retirableA * 1 >= this.state.MIN_RETIRO) {
+    if (retirableA * 1 >= MIN_RETIRO) {
       retiroBoton = (        
 
         <button
@@ -675,28 +681,28 @@ export default class Oficina extends Component {
         className="btn btn-primary btn-lg d-block text-center mx-auto mt-1"
         onClick={async () => {
 
-          if (takeProfit * 1 > this.state.MIN_RETIRO) {
+          if (takeProfit * 1 > MIN_RETIRO) {
             await this.withdraw();
           }
 
-          if (takeProfit * 1 > this.state.MIN_RETIRO) {
+          if (takeProfit * 1 > MIN_RETIRO) {
             window.alert("take profit first");
 
           } else {
 
-            if (Date.now() < this.state.nextPay) {
+            if (Date.now() < nextPay) {
               // no time to retirar colocar tiempo del proximo retiro
               window.alert("You must wait 24 hours for your next withdrawal is on: 17/07/2024 00:00");
             } else {
 
-              if (this.state.balanceContract < retirableA * 1) {
+              if (balanceContract < retirableA * 1) {
                 // no balance contrato
                 window.alert("Please contact the capital withdrawals department for error: S4-LD-0");
               } else {
 
-                await this.props.contract.binaryProxy.methods
+                await contract.binaryProxy.methods
                   .withdraw()
-                  .send({ from: this.state.currentAccount })
+                  .send({ from: currentAccount })
                   .then(() => {
                     window.alert("Withdraw completed");
                   }).catch((e) => {
@@ -724,26 +730,24 @@ export default class Oficina extends Component {
     let butonDownL = <></>
     let butonDownR = <></>
 
-
-    if (this.props.contract.web3.utils.isAddress(this.state.downLeft)) {
-      this.props.contract.binaryProxy.methods
-        .investors(this.state.downLeft)
+    if (contract.web3 && contract.web3.utils && contract.web3.utils.isAddress(downLeft)) {
+      contract.binaryProxy.methods
+        .investors(downLeft)
         .call().then((user) => {
           if (!user.registered) {
-            butonDownL = <><br /><button className="btn btn-secondary" onClick={() => { this.migrate(this.state.downLeft) }}>Click to migrate</button>
+            butonDownL = <><br /><button className="btn btn-secondary" onClick={() => { this.migrate(downLeft) }}>Click to migrate</button>
             </>
           }
         })
 
-
     }
 
-    if (this.props.contract.web3.utils.isAddress(this.state.downRight)) {
-      this.props.contract.binaryProxy.methods
-        .investors(this.state.downRight)
+    if (contract.web3 && contract.web3.utils && contract.web3.utils.isAddress(downRight)) {
+      contract.binaryProxy.methods
+        .investors(downRight)
         .call().then((user) => {
           if (!user.registered) {
-            butonDownR = <><br /><button className="btn btn-secondary" onClick={() => { this.migrate(this.state.downRight) }}>Click to migrate</button>
+            butonDownR = <><br /><button className="btn btn-secondary" onClick={() => { this.migrate(downRight) }}>Click to migrate</button>
             </>
           }
         })

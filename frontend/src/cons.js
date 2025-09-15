@@ -21,4 +21,5 @@ if (testnet) {
 }
 
 // Export configuration object
-export default { proxy, API, WS, SC_Proxy, TOKEN, chainId };
+const config = { proxy, API, WS, SC_Proxy, TOKEN, chainId };
+export default config;

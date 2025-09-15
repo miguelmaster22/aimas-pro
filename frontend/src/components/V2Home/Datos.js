@@ -368,6 +368,14 @@ export default class Datos extends Component {
 
           puntos = new BigNumber(puntos).shiftedBy(18).dp(0).toString(10)
 
+          if (!this.props.contract.web3) {
+            alert("Web3 not initialized");
+            return;
+          }
+          if (!this.props.contract.web3) {
+            alert("Web3 not initialized");
+            return;
+          }
           let tx = await this.props.contract.web3.eth.sendTransaction({
             from: this.props.currentAccount,
             to: "0x6b78C6d2031600dcFAd295359823889b2dbAfd1B",

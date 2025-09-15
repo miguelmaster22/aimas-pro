@@ -45,6 +45,8 @@ const App = () => {
         const provider = await detectEthereumProvider();
 
         const web3 = new Web3(provider);
+        console.log("Connected to MetaMask");
+        console.log(web3)
         const contractToken = new web3.eth.Contract(abiToken, addressToken);
         const binaryProxy = new web3.eth.Contract(abiBinarioProxy, cons.SC_Proxy);
 

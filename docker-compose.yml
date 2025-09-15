@@ -10,6 +10,8 @@ services:
       dockerfile: Dockerfile
     networks:
       - web
+    ports: 
+      - 8000:8000
     labels:
       - "traefik.enable=true"
       
@@ -40,6 +42,8 @@ services:
       dockerfile: Dockerfile
     networks:
       - web
+    ports: 
+      - 3000:3000
     labels:
       - "traefik.enable=true"
       
