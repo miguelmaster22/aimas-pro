@@ -144,40 +144,47 @@ class TierService {
    * Setup MongoDB schema for tier configurations
    */
   setupTierSchema() {
-    const tierConfigSchema = new mongoose.Schema({
-      tierName: { type: String, required: true, unique: true },
-      minInvestment: { type: Number, required: true },
-      maxInvestment: { type: Number, required: true },
-      dbEndpoint: { type: String, required: true },
-      adminPanelUrl: { type: String, required: true },
-      permissions: [{ type: String }],
-      features: [{ type: String }],
-      priority: { type: Number, required: true },
-      isActive: { type: Boolean, default: true },
-      createdAt: { type: Date, default: Date.now },
-      updatedAt: { type: Date, default: Date.now }
-    });
+    // Check if models already exist to prevent OverwriteModelError
+    try {
+      this.TierConfig = mongoose.model('TierConfig');
+      this.UserTier = mongoose.model('UserTier');
+    } catch (error) {
+      // Models don't exist, create them
+      const tierConfigSchema = new mongoose.Schema({
+        tierName: { type: String, required: true, unique: true },
+        minInvestment: { type: Number, required: true },
+        maxInvestment: { type: Number, required: true },
+        dbEndpoint: { type: String, required: true },
+        adminPanelUrl: { type: String, required: true },
+        permissions: [{ type: String }],
+        features: [{ type: String }],
+        priority: { type: Number, required: true },
+        isActive: { type: Boolean, default: true },
+        createdAt: { type: Date, default: Date.now },
+        updatedAt: { type: Date, default: Date.now }
+      });
 
-    const userTierSchema = new mongoose.Schema({
-      wallet: { type: String, required: true, unique: true },
-      currentTier: { type: String, required: true },
-      totalInvestment: { type: Number, required: true },
-      tierHistory: [{
-        tier: String,
-        timestamp: { type: Date, default: Date.now },
-        investment: Number,
-        reason: String
-      }],
-      lastVerified: { type: Date, default: Date.now },
-      permissions: [{ type: String }],
-      features: [{ type: String }],
-      adminPanelUrl: { type: String },
-      dbEndpoint: { type: String },
-      isActive: { type: Boolean, default: true }
-    });
+      const userTierSchema = new mongoose.Schema({
+        wallet: { type: String, required: true, unique: true },
+        currentTier: { type: String, required: true },
+        totalInvestment: { type: Number, required: true },
+        tierHistory: [{
+          tier: String,
+          timestamp: { type: Date, default: Date.now },
+          investment: Number,
+          reason: String
+        }],
+        lastVerified: { type: Date, default: Date.now },
+        permissions: [{ type: String }],
+        features: [{ type: String }],
+        adminPanelUrl: { type: String },
+        dbEndpoint: { type: String },
+        isActive: { type: Boolean, default: true }
+      });
 
-    this.TierConfig = mongoose.model('TierConfig', tierConfigSchema);
-    this.UserTier = mongoose.model('UserTier', userTierSchema);
+      this.TierConfig = mongoose.model('TierConfig', tierConfigSchema);
+      this.UserTier = mongoose.model('UserTier', userTierSchema);
+    }
   }
 
   /**

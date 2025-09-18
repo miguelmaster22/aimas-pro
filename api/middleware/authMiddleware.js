@@ -10,10 +10,15 @@ const ContractService = require('../services/contractService');
 
 class AuthMiddleware {
   constructor() {
-    this.contractService = new ContractService();
-    this.tierService = new TierService();
-    this.authService = new AuthService(this.contractService, this.tierService);
-    this.jwtSecret = process.env.JWT_SECRET || 'default-secret-change-in-production';
+    // Use singleton pattern to prevent multiple service instantiations
+    if (!AuthMiddleware.instance) {
+      this.contractService = new ContractService();
+      this.tierService = new TierService();
+      this.authService = new AuthService(this.contractService, this.tierService);
+      this.jwtSecret = process.env.JWT_SECRET || 'default-secret-change-in-production';
+      AuthMiddleware.instance = this;
+    }
+    return AuthMiddleware.instance;
   }
 
   /**
