@@ -116,5 +116,45 @@ const Model = connection.model('ModelName', schema);
 3. **Implement Service Singletons**: Ensure services are instantiated only once
 4. **Module Caching**: Leverage Node.js module caching for service instances
 
+## MongoDB Connection Options Fix
+
+### Additional Issue: Deprecated `bufferMaxEntries` Option
+**File**: [`api/services/databaseService.js`](api/services/databaseService.js:87)
+
+**Problem**: The `bufferMaxEntries` option is deprecated in newer MongoDB driver versions and causes connection errors.
+
+**Solution Applied**:
+```javascript
+// Before (causing error)
+const mongooseConnection = await mongoose.createConnection(config.uri, {
+  maxPoolSize: config.maxPoolSize,
+  minPoolSize: config.minPoolSize,
+  maxIdleTimeMS: config.maxIdleTimeMS,
+  serverSelectionTimeoutMS: config.serverSelectionTimeoutMS,
+  bufferCommands: false,
+  bufferMaxEntries: 0  // ❌ Deprecated option
+});
+
+// After (fixed)
+const mongooseConnection = await mongoose.createConnection(config.uri, {
+  maxPoolSize: config.maxPoolSize,
+  minPoolSize: config.minPoolSize,
+  maxIdleTimeMS: config.maxIdleTimeMS,
+  serverSelectionTimeoutMS: config.serverSelectionTimeoutMS,
+  bufferCommands: false
+  // ✅ Removed deprecated bufferMaxEntries option
+});
+```
+
+### Modern MongoDB Connection Options
+The following options are supported in current MongoDB drivers:
+- `maxPoolSize` - Maximum number of connections in the pool
+- `minPoolSize` - Minimum number of connections in the pool
+- `maxIdleTimeMS` - Maximum time a connection can be idle
+- `serverSelectionTimeoutMS` - Timeout for server selection
+- `bufferCommands` - Whether to buffer commands when disconnected
+
 ## Status
-✅ **FIXED** - The Mongoose model overwrite error has been resolved with proper model registration checks and singleton pattern implementation.
+✅ **FIXED** - Both the Mongoose model overwrite error and MongoDB connection options error have been resolved:
+1. Proper model registration checks and singleton pattern implementation
+2. Removed deprecated `bufferMaxEntries` option from connection configuration

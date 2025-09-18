@@ -84,14 +84,14 @@ class DatabaseService {
    */
   async createConnection(dbName, config) {
     try {
-      // Create Mongoose connection
+      // Create Mongoose connection with modern MongoDB driver options
       const mongooseConnection = await mongoose.createConnection(config.uri, {
         maxPoolSize: config.maxPoolSize,
         minPoolSize: config.minPoolSize,
         maxIdleTimeMS: config.maxIdleTimeMS,
         serverSelectionTimeoutMS: config.serverSelectionTimeoutMS,
-        bufferCommands: false,
-        bufferMaxEntries: 0
+        bufferCommands: false
+        // Removed deprecated bufferMaxEntries option
       });
 
       // Create MongoDB native client for advanced operations
