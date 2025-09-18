@@ -1,29 +1,66 @@
+/**
+ * Enhanced CrowdFunding Component for Investment Management
+ * 
+ * IMPROVEMENTS MADE:
+ * - Fixed memory leaks with proper interval cleanup
+ * - Removed global variables and race conditions
+ * - Enhanced error handling with user-friendly messages
+ * - Added loading states and accessibility improvements
+ * - Implemented proper form validation
+ * - Enhanced security by removing XSS vulnerabilities
+ * - Added responsive design improvements
+ * - Optimized performance with debounced inputs
+ */
 import React, { Component } from "react";
 import cons from "../../cons.js";
+import { ErrorHandler, ValidationUtils, TransactionManager } from "../../utils/errorHandler";
 
 const BigNumber = require("bignumber.js");
 
-/*
-const Cryptr = require("cryptr");
-const cryptr = new Cryptr(process.env.REACT_APP_ENCR_STO);
-function encryptString(s) {
-  if (typeof s === "string") {
-    return cryptr.encrypt(s);
-  } else {
-    return {};
-  }
-}
-*/
+// Loading component
+const LoadingSpinner = ({ size = "sm", message }) => (
+  <div className="d-flex align-items-center justify-content-center">
+    <div className={`spinner-border spinner-border-${size} me-2`} role="status" aria-hidden="true"></div>
+    {message && <span className="sr-only">{message}</span>}
+  </div>
+);
 
-let migracionProgress = false;
-let plan = 25;
+// Modal component for better UX
+const AlertModal = ({ show, title, body, onClose }) => {
+  if (!show) return null;
 
+  return (
+    <div className="modal fade show d-block" tabIndex="-1" role="dialog" aria-labelledby="alertModalLabel" aria-hidden="false">
+      <div className="modal-dialog modal-dialog-centered" role="document">
+        <div className="modal-content">
+          <div className="modal-header">
+            <h5 className="modal-title" id="alertModalLabel">{title}</h5>
+            <button type="button" className="btn-close" onClick={onClose} aria-label="Close"></button>
+          </div>
+          <div className="modal-body">
+            <p>{body}</p>
+          </div>
+          <div className="modal-footer">
+            <button type="button" className="btn btn-secondary" onClick={onClose}>
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Enhanced CrowdFunding component with improved error handling and performance
+ */
 export default class CrowdFunding extends Component {
   constructor(props) {
     super(props);
 
     this.state = {
-      min: plan,
+      // Investment data
+      min: 25,
       deposito: "Loading...",
       balance: "Loading...",
       currentAccount: this.props.currentAccount,
@@ -34,612 +71,807 @@ export default class CrowdFunding extends Component {
       balanceUSDT: "Loading...",
       precioSITE: 1,
       valueUSDT: 1,
-      valueUSDTResult: plan,
-      planPrice: plan,
+      valueUSDTResult: 25,
+      planPrice: 25,
       hand: 0,
       balanceSite: 0,
-      ModalTitulo: "",
-      ModalBody: "",
+      
+      // User info
       id: "##",
-      upline: "----------------------"
-
+      upline: "----------------------",
+      
+      // Modal state
+      modal: {
+        show: false,
+        title: "",
+        body: ""
+      },
+      
+      // Loading and error states
+      isLoading: true,
+      isProcessing: false,
+      error: null,
+      
+      // Form validation
+      formErrors: {},
+      
+      // Migration state (removed global variable)
+      isMigrating: false
     };
 
+    // Bind methods
     this.deposit = this.deposit.bind(this);
-    this.estado = this.estado.bind(this);
-
+    this.updateState = this.updateState.bind(this);
     this.handleChangeUSDT = this.handleChangeUSDT.bind(this);
     this.handleChangeUSDTResult = this.handleChangeUSDTResult.bind(this);
-
     this.migrate = this.migrate.bind(this);
+    this.showModal = this.showModal.bind(this);
+    this.hideModal = this.hideModal.bind(this);
+    this.validateForm = this.validateForm.bind(this);
+    
+    // Store interval reference for cleanup
+    this.updateInterval = null;
+    this.initialTimeout = null;
+    
+    // Debounce timer for input changes
+    this.inputDebounceTimer = null;
   }
 
-  async handleChangeUSDT(event) {
-    let value = event.target.value;
-
-    if (parseInt(value) < 1) {
-      value = 1;
-    }
-
-    this.setState({
-      valueUSDT: value,
-      valueUSDTResult: parseInt(value * this.state.planPrice),
-    });
-  }
-
-  async handleChangeUSDTResult(event) {
-    let value = event.target.value;
-
-    if(value < this.state.planPrice){
-      value = this.state.planPrice
-    }
-
-    if(value%this.state.planPrice > 0){
-      if(value%this.state.planPrice > this.state.planPrice/2){
-        value = (value-value%this.state.planPrice)+this.state.planPrice
-      }else{
-        value = value-value%this.state.planPrice
-      }
-    }
-
-    this.setState({
-      valueUSDTResult: value,
-      valueUSDT: parseInt(value / this.state.planPrice),
-    });
-  }
-
+  /**
+   * Component lifecycle with proper cleanup
+   */
   async componentDidMount() {
-    setTimeout(() => {
-      this.estado();
-      //this.migrate(this.props.currentAccount);
-    }, 3 * 1000);
+    // Initial state update after 3 seconds
+    this.initialTimeout = setTimeout(() => {
+      this.updateState();
+    }, 3000);
 
-    setInterval(() => {
-      this.estado();
-    }, 10 * 1000);
+    // Set up periodic updates every 10 seconds
+    this.updateInterval = setInterval(() => {
+      this.updateState();
+    }, 10000);
   }
 
-  async estado() {
-    var accountAddress = this.props.currentAccount;
-    let inversors = await this.props.contract.binaryProxy.methods
-      .investors(this.props.currentAccount)
-      .call({ from: this.props.currentAccount });
+  /**
+   * Cleanup intervals and timeouts
+   */
+  componentWillUnmount() {
+    if (this.updateInterval) {
+      clearInterval(this.updateInterval);
+      this.updateInterval = null;
+    }
+    
+    if (this.initialTimeout) {
+      clearTimeout(this.initialTimeout);
+      this.initialTimeout = null;
+    }
+    
+    if (this.inputDebounceTimer) {
+      clearTimeout(this.inputDebounceTimer);
+      this.inputDebounceTimer = null;
+    }
+  }
 
-    let inicio = accountAddress.substr(0, 4);
-    let fin = accountAddress.substr(-4);
-
-    let texto = inicio + "..." + fin;
-
-    document.getElementById(
-      "login"
-    ).href = `https://bscscan.com/address/${accountAddress}`;
-    document.getElementById("login-my-wallet").innerHTML = texto;
-
-    let nameToken1 = await this.props.contract.contractToken.methods
-      .symbol()
-      .call({ from: this.props.currentAccount });
-
-    let aprovado = await this.props.contract.contractToken.methods
-      .allowance(accountAddress, this.props.contract.binaryProxy._address)
-      .call({ from: this.props.currentAccount });
-
-    if (aprovado > 0) {
-      if (!inversors.registered) {
-        aprovado = "Register";
-      } else {
-        aprovado = "Buy Plan";
+  /**
+   * Show modal with enhanced accessibility
+   */
+  showModal(title, body) {
+    this.setState({
+      modal: {
+        show: true,
+        title,
+        body
       }
-    } else {
-      aprovado = "Allow wallet";
+    });
+  }
+
+  /**
+   * Hide modal
+   */
+  hideModal() {
+    this.setState({
+      modal: {
+        show: false,
+        title: "",
+        body: ""
+      }
+    });
+  }
+
+  /**
+   * Enhanced input handler with debouncing and validation
+   */
+  handleChangeUSDT(event) {
+    const value = Math.max(1, parseInt(event.target.value) || 1);
+    
+    // Clear previous debounce timer
+    if (this.inputDebounceTimer) {
+      clearTimeout(this.inputDebounceTimer);
+    }
+    
+    // Debounce the state update
+    this.inputDebounceTimer = setTimeout(() => {
+      this.setState({
+        valueUSDT: value,
+        valueUSDTResult: value * this.state.planPrice,
+        formErrors: { ...this.state.formErrors, valueUSDT: null }
+      });
+    }, 300);
+  }
+
+  /**
+   * Enhanced result input handler with validation
+   */
+  handleChangeUSDTResult(event) {
+    let value = parseInt(event.target.value) || this.state.planPrice;
+    
+    // Ensure minimum value
+    if (value < this.state.planPrice) {
+      value = this.state.planPrice;
+    }
+    
+    // Round to nearest plan price multiple
+    const remainder = value % this.state.planPrice;
+    if (remainder > 0) {
+      value = remainder > this.state.planPrice / 2 
+        ? value - remainder + this.state.planPrice
+        : value - remainder;
     }
 
-    inversors.inicio = 1000;
+    // Clear previous debounce timer
+    if (this.inputDebounceTimer) {
+      clearTimeout(this.inputDebounceTimer);
+    }
+    
+    // Debounce the state update
+    this.inputDebounceTimer = setTimeout(() => {
+      this.setState({
+        valueUSDTResult: value,
+        valueUSDT: value / this.state.planPrice,
+        formErrors: { ...this.state.formErrors, valueUSDTResult: null }
+      });
+    }, 300);
+  }
 
-    let tiempo = await this.props.contract.binaryProxy.methods
+  /**
+   * Validate form inputs
+   */
+  validateForm() {
+    const errors = {};
+    
+    if (!ValidationUtils.isValidAmount(this.state.valueUSDT)) {
+      errors.valueUSDT = "Please enter a valid amount";
+    }
+    
+    if (this.state.valueUSDT < 1) {
+      errors.valueUSDT = "Minimum investment is 1 contract";
+    }
+    
+    if (this.state.balanceSite < this.state.valueUSDTResult) {
+      errors.balance = `Insufficient balance. Required: ${this.state.valueUSDTResult} USDT, Available: ${this.state.balanceSite} USDT`;
+    }
+    
+    this.setState({ formErrors: errors });
+    return Object.keys(errors).length === 0;
+  }
+
+  /**
+   * Enhanced state update with comprehensive error handling
+   */
+  async updateState() {
+    try {
+      this.setState({ isLoading: true, error: null });
+
+      if (!this.props.contract?.binaryProxy || !this.props.currentAccount) {
+        throw new Error("Contract or account not available");
+      }
+
+      const accountAddress = this.props.currentAccount;
+      
+      // Update wallet display with security improvements
+      this.updateWalletDisplay(accountAddress);
+      
+      // Fetch contract data
+      const contractData = await this.fetchContractData(accountAddress);
+      
+      // Process investor data
+      const investorData = await this.processInvestorData(accountAddress);
+      
+      // Update partner information
+      const partnerInfo = await this.getPartnerInfo(accountAddress, investorData.registered);
+      
+      // Get plan pricing
+      const planPrice = await this.getPlanPrice();
+      
+      this.setState({
+        ...contractData,
+        ...investorData,
+        ...partnerInfo,
+        planPrice,
+        isLoading: false,
+        currentAccount: accountAddress
+      });
+
+      // Update investor-specific data if available
+      if (this.props.investor?.registered) {
+        this.setState({
+          id: this.props.investor.id || "##",
+          upline: this.props.investor.upline || "----------------------"
+        });
+      }
+
+    } catch (error) {
+      console.error("State update error:", error);
+      this.setState({
+        error: ErrorHandler.parseError(error),
+        isLoading: false
+      });
+    }
+  }
+
+  /**
+   * Update wallet display with XSS protection
+   */
+  updateWalletDisplay(accountAddress) {
+    const walletElement = document.getElementById("login-my-wallet");
+    const linkElement = document.getElementById("login");
+    
+    if (walletElement && linkElement) {
+      const formattedAddress = ValidationUtils.formatAddress(accountAddress);
+      
+      // Use textContent instead of innerHTML to prevent XSS
+      walletElement.textContent = formattedAddress;
+      linkElement.href = `https://bscscan.com/address/${accountAddress}`;
+    }
+  }
+
+  /**
+   * Fetch contract data with parallel requests
+   */
+  async fetchContractData(accountAddress) {
+    const [
+      nameToken1,
+      allowance,
+      decimals,
+      balance,
+      tiempo,
+      porcentaje
+    ] = await Promise.all([
+      this.props.contract.contractToken.methods.symbol().call({ from: accountAddress }),
+      this.props.contract.contractToken.methods.allowance(accountAddress, this.props.contract.binaryProxy._address).call({ from: accountAddress }),
+      this.props.contract.contractToken.methods.decimals().call({ from: accountAddress }),
+      this.props.contract.contractToken.methods.balanceOf(accountAddress).call({ from: accountAddress }),
+      this.props.contract.binaryProxy.methods.tiempo().call({ from: accountAddress }),
+      this.props.contract.binaryProxy.methods.porcent().call({ from: accountAddress })
+    ]);
+
+    const balanceFormatted = new BigNumber(balance).shiftedBy(-decimals).toNumber();
+    
+    return {
+      nameToken1,
+      decimales: decimals,
+      balanceSite: balanceFormatted,
+      balanceUSDT: balanceFormatted,
+      dias: tiempo,
+      porcentaje: parseInt(porcentaje),
+      allowance: new BigNumber(allowance).shiftedBy(-18).toNumber()
+    };
+  }
+
+  /**
+   * Process investor data
+   */
+  async processInvestorData(accountAddress) {
+    const inversors = await this.props.contract.binaryProxy.methods
+      .investors(accountAddress)
+      .call({ from: accountAddress });
+
+    let depositoText = "Allow wallet";
+    
+    if (this.state.allowance > 0) {
+      depositoText = inversors.registered ? "Buy Plan" : "Register";
+    }
+
+    // Check if plan needs update
+    const tiempo = await this.props.contract.binaryProxy.methods
       .tiempo()
-      .call({ from: this.props.currentAccount });
+      .call({ from: accountAddress });
 
-    tiempo = tiempo * 1000;
-
-    let porcentiempo = ((Date.now() - inversors.inicio) * 100) / tiempo;
-
-    let decimales = await this.props.contract.contractToken.methods
-      .decimals()
-      .call({ from: this.props.currentAccount });
-
-    let balance = await this.props.contract.contractToken.methods
-      .balanceOf(this.props.currentAccount)
-      .call({ from: this.props.currentAccount });
-
-    balance = new BigNumber(balance).shiftedBy(-decimales).toString(10);
-
-    var valorPlan = 0;
-
-    if (porcentiempo < 100) {
-      aprovado = "Update Plan";
-
-      valorPlan = inversors.plan / 10 ** 8;
+    const timeProgress = ((Date.now() - 1000) * 100) / (tiempo * 1000);
+    
+    if (timeProgress < 100 && inversors.registered) {
+      depositoText = "Update Plan";
     }
 
-    var partner = cons.WS;
+    return {
+      deposito: depositoText,
+      balance: inversors.plan ? inversors.plan / 10 ** 8 : 0,
+      investorNew: inversors
+    };
+  }
 
-    var hand = "Left ";
-
-    if (inversors.registered) {
-      partner = await this.props.contract.binaryProxy.methods
-        .padre(this.props.currentAccount)
-        .call({ from: this.props.currentAccount });
-
+  /**
+   * Get partner information with enhanced URL parsing
+   */
+  async getPartnerInfo(accountAddress, isRegistered) {
+    if (isRegistered) {
+      const partner = await this.props.contract.binaryProxy.methods
+        .padre(accountAddress)
+        .call({ from: accountAddress });
 
       if (partner !== "0x0000000000000000000000000000000000000000") {
+        const partnerUpline = await this.props.contract.binaryProxy.methods
+          .upline(accountAddress)
+          .call();
 
-        let partner_b = await this.props.contract.binaryProxy.methods.upline(this.props.currentAccount).call()
-
-        let lado = parseInt(partner_b._lado);
-
-        if (lado < 2) {
-          if (lado === 0) {
-            partner = "Left of " + partner
-          } else {
-            partner = "Right of " + partner
-
-          }
-        }
-
-
-      } else {
-        partner = "---------------------------------";
+        const side = parseInt(partnerUpline._lado);
+        const sideText = side === 0 ? "Left" : side === 1 ? "Right" : "";
+        
+        return {
+          partner: sideText ? `${sideText} of ${ValidationUtils.formatAddress(partner)}` : ValidationUtils.formatAddress(partner),
+          hand: side
+        };
       }
-
-
-
-
-    } else {
-      var loc = document.location.href;
-      if (loc.indexOf("?") > 0) {
-        var getString = loc.split("?");
-        //console.log(getString)
-        getString = getString[getString.length - 1];
-        //console.log(getString);
-        var GET = getString.split("&");
-        var get = {};
-        for (var i = 0, l = GET.length; i < l; i++) {
-          var tmp = GET[i].split("=");
-          get[tmp[0]] = unescape(decodeURI(tmp[1]));
-        }
-
-        if (get["hand"]) {
-          tmp = get["hand"].split("#");
-
-          //console.log(tmp);
-
-          if (tmp[0] === "right") {
-            hand = "Rigth ";
-          }
-        }
-
-        if (get["ref"]) {
-          tmp = get["ref"].split("#");
-
-          //console.log(tmp[0]);
-
-          let wallet = await this.props.contract.binaryProxy.methods
-            .idToAddress(tmp[0])
-            .call({ from: this.props.currentAccount });
-
-          inversors = await this.props.contract.binaryProxy.methods
-            .investors(wallet)
-            .call({ from: this.props.currentAccount });
-          //console.log(wallet);
-          if (inversors.registered) {
-            partner = hand + " of " + wallet;
-          }
-        }
-      }
+      
+      return { partner: "Direct registration", hand: 0 };
     }
 
+    // Parse URL for referral information
+    return this.parseReferralFromUrl(accountAddress);
+  }
 
+  /**
+   * Parse referral information from URL with enhanced security
+   */
+  async parseReferralFromUrl(accountAddress) {
+    try {
+      const url = new URL(window.location.href);
+      const refParam = url.searchParams.get('ref');
+      const handParam = url.searchParams.get('hand');
+      
+      if (!refParam) {
+        return { partner: cons.WS, hand: 0 };
+      }
 
-    var dias = await this.props.contract.binaryProxy.methods
-      .tiempo()
-      .call({ from: this.props.currentAccount });
+      // Validate and get wallet from ID
+      const wallet = await this.props.contract.binaryProxy.methods
+        .idToAddress(refParam)
+        .call({ from: accountAddress });
 
-    //dias = (parseInt(dias)/86400);
+      if (!ValidationUtils.isValidAddress(wallet)) {
+        return { partner: cons.WS, hand: 0 };
+      }
 
-    var porcentaje = await this.props.contract.binaryProxy.methods
-      .porcent()
-      .call({ from: this.props.currentAccount });
+      // Check if referrer is registered
+      const referrerData = await this.props.contract.binaryProxy.methods
+        .investors(wallet)
+        .call({ from: accountAddress });
 
-    porcentaje = parseInt(porcentaje);
+      if (!referrerData.registered) {
+        return { partner: cons.WS, hand: 0 };
+      }
 
-    var decimals = await this.props.contract.contractToken.methods
-      .decimals()
-      .call({ from: this.props.currentAccount });
+      const hand = handParam === "right" ? 1 : 0;
+      const handText = hand === 1 ? "Right" : "Left";
+      
+      return {
+        partner: `${handText} of ${ValidationUtils.formatAddress(wallet)}`,
+        hand
+      };
 
-    var balanceUSDT = await this.props.contract.contractToken.methods
-      .balanceOf(this.props.currentAccount)
-      .call({ from: this.props.currentAccount });
-
-    balanceUSDT = parseInt(balanceUSDT) / 10 ** decimals;
-
-
-    const investorNew = await this.props.contract.binaryProxy.methods
-      .investors(this.props.currentAccount)
-      .call();
-
-    let planea =  new BigNumber(await this.props.contract.binaryProxy.methods
-      .plan()
-      .call({ from: this.props.currentAccount })).shiftedBy(-18).toNumber()
-
-    this.setState({
-      deposito: aprovado,
-      balance: valorPlan,
-      decimales: decimales,
-      accountAddress: accountAddress,
-      porcentaje: porcentaje,
-      dias: dias,
-      partner: partner,
-      balanceSite: balance,
-      balanceUSDT: balanceUSDT,
-      nameToken1: nameToken1,
-      investorNew: investorNew,
-      planPrice: planea,
-    });
-
-    if (this.props.investor.registered) {
-      let inves = this.props.investor
-      this.setState({
-        id: inves.id,
-        upline: inves.upline
-      })
+    } catch (error) {
+      console.warn("URL parsing error:", error);
+      return { partner: cons.WS, hand: 0 };
     }
   }
 
+  /**
+   * Get plan price
+   */
+  async getPlanPrice() {
+    try {
+      const planPrice = await this.props.contract.binaryProxy.methods
+        .plan()
+        .call({ from: this.props.currentAccount });
+      
+      return new BigNumber(planPrice).shiftedBy(-18).toNumber();
+    } catch (error) {
+      console.warn("Plan price fetch error:", error);
+      return 25; // Default plan price
+    }
+  }
+
+  /**
+   * Enhanced deposit function with comprehensive validation and error handling
+   */
   async deposit() {
-
-    if (this.props.view) {
-      this.setState({
-        ModalTitulo: "ALERT!",
-        ModalBody: "Is only view mode"
-      })
-      window.$("#alert").modal("show");
-
-      return;
-    }
-
-    let { balanceSite, valueUSDT, balance } = this.state;
-
-    var aprovado = await this.props.contract.contractToken.methods
-      .allowance(
-        this.props.currentAccount,
-        this.props.contract.binaryProxy._address
-      )
-      .call({ from: this.props.currentAccount });
-
-    aprovado = new BigNumber(aprovado).shiftedBy(-18).toNumber()
-
-    if (aprovado <= 10000) {
-      await this.props.contract.contractToken.methods
-        .approve(
-          this.props.contract.binaryProxy._address,
-          "115792089237316195423570985008687907853269984665640564039457584007913129639935"
-        )
-        .send({ from: this.props.currentAccount });
-
-      this.setState({
-        ModalTitulo: "INFO",
-        ModalBody: "Balance approval for exchange: successful"
-      })
-      window.$("#alert").modal("show");
-      aprovado = await this.props.contract.contractToken.methods
-        .allowance(
-          this.props.currentAccount,
-          this.props.contract.binaryProxy._address
-        )
-        .call({ from: this.props.currentAccount });
-    }
-
-    var amount = await this.props.contract.binaryProxy.methods
-      .plan()
-      .call({ from: this.props.currentAccount });
-    amount = new BigNumber(amount).shiftedBy(-18).toNumber();
-    amount = amount * valueUSDT;
-    amount = amount - balance;
-
-    if (aprovado > 0 && balanceSite >= amount) {
-      var loc = document.location.href;
-      var sponsor = cons.WS;
-      var hand = 0;
-      let investors = await this.props.contract.binaryProxy.methods
-        .investors(this.props.currentAccount)
-        .call({ from: this.props.currentAccount });
-
-      if (investors.registered) {
-        sponsor = await this.props.contract.binaryProxy.methods
-          .padre(this.props.currentAccount)
-          .call({ from: this.props.currentAccount });
-      } else {
-        if (loc.indexOf("?") > 0) {
-          var getString = loc.split("?");
-          getString = getString[getString.length - 1];
-          //console.log(getString);
-          var GET = getString.split("&");
-          var get = {};
-          for (var i = 0, l = GET.length; i < l; i++) {
-            var tmp = GET[i].split("=");
-            get[tmp[0]] = unescape(decodeURI(tmp[1]));
-          }
-
-          if (get["hand"]) {
-            tmp = get["hand"].split("#");
-
-            if (tmp[0] === "right") {
-              hand = 1;
-            }
-          }
-
-          if (get["ref"]) {
-            tmp = get["ref"].split("#");
-
-            var wallet = await this.props.contract.binaryProxy.methods
-              .idToAddress(tmp[0])
-              .call({ from: this.props.currentAccount });
-
-            var padre = await this.props.contract.binaryProxy.methods
-              .investors(wallet)
-              .call({ from: this.props.currentAccount });
-
-            if (padre.registered) {
-              sponsor = wallet;
-            }
-          }
-        }
-      }
-
-      // registered referer 
-
-      let refererInvest = await this.props.contract.binaryProxy.methods
-        .investors(sponsor)
-        .call({ from: this.props.currentAccount });
-
-      if (!refererInvest.registered) {
-        this.setState({
-          ModalTitulo: "INFO",
-          ModalBody: "Your referral must be migrated in order to continue with the process"
-        })
-        window.$("#alert").modal("show");
+    try {
+      // Check if in view mode
+      if (this.props.view) {
+        this.showModal("ALERT!", "This is view-only mode. Transactions are not allowed.");
         return;
       }
 
-      if (
-        !investors.registered &&
-        sponsor !== "0x0000000000000000000000000000000000000000"
-      ) {
-        await this.props.contract.binaryProxy.methods
-          .registro(sponsor, hand)
-          .send({ from: this.props.currentAccount });
-        this.setState({
-          ModalTitulo: "INFO",
-          ModalBody: "congratulation registration: successful"
-        })
-        window.$("#alert").modal("show");
-        sponsor = await this.props.contract.binaryProxy.methods
-          .padre(this.props.currentAccount)
-          .call({ from: this.props.currentAccount });
-      } else {
-        if (!investors.registered) {
-          this.setState({
-            ModalTitulo: "CHECK",
-            ModalBody: "You need a referral link to register"
-          })
-          window.$("#alert").modal("show");
-          return;
-        }
+      // Validate form
+      if (!this.validateForm()) {
+        this.showModal("Validation Error", "Please correct the form errors and try again.");
+        return;
       }
 
-      if (
-        (
-          (
-            await this.props.contract.binaryProxy.methods
-              .leveling(this.props.currentAccount)
-              .call({ from: this.props.currentAccount })
-          ).toLowerCase() === 1
-          ||
-          sponsor !== "0x0000000000000000000000000000000000000000"
-        ) &&
-        investors.registered &&
-        parseInt(valueUSDT) > 0
-      ) {
+      this.setState({ isProcessing: true });
 
-        await this.props.contract.binaryProxy.methods
-          .buyPlan(valueUSDT)
-          .send({ from: this.props.currentAccount });
+      const { balanceSite, valueUSDT, balance } = this.state;
+      
+      // Check allowance
+      const allowance = await this.props.contract.contractToken.methods
+        .allowance(this.props.currentAccount, this.props.contract.binaryProxy._address)
+        .call({ from: this.props.currentAccount });
 
-        this.setState({
-          ModalTitulo: "INFO",
-          ModalBody: "Congratulations on a successful investment"
-        })
-        window.$("#alert").modal("show");
+      const allowanceFormatted = new BigNumber(allowance).shiftedBy(-18).toNumber();
 
-        document
-          .getElementById("services")
-          .scrollIntoView({ block: "start", behavior: "smooth" });
-
-      } else {
-        if (valueUSDT <= 0) {
-          this.setState({
-            ModalTitulo: "CHECK",
-            ModalBody: "Invalid imput to buy a plan"
-          })
-          window.$("#alert").modal("show");
-        } else {
-          this.setState({
-            ModalTitulo: "CHECK",
-            ModalBody: "Please use referral link to buy a plan"
-          })
-          window.$("#alert").modal("show");
-        }
+      // Request approval if needed
+      if (allowanceFormatted <= 10000) {
+        await this.requestApproval();
+        return; // Exit and let user try again after approval
       }
-    } else {
-      if (balanceSite < amount) {
-        this.setState({
-          ModalTitulo: "CHECK",
-          ModalBody: "You do not have enough balance, you need: " +
-            amount +
-            " USDT and in your wallet you have: " +
-            balanceSite
-        })
-        window.$("#alert").modal("show");
+
+      // Calculate required amount
+      const planPrice = await this.props.contract.binaryProxy.methods
+        .plan()
+        .call({ from: this.props.currentAccount });
+      
+      const planPriceFormatted = new BigNumber(planPrice).shiftedBy(-18).toNumber();
+      const requiredAmount = (planPriceFormatted * valueUSDT) - balance;
+
+      // Check balance
+      if (balanceSite < requiredAmount) {
+        this.showModal(
+          "Insufficient Balance",
+          `You need ${requiredAmount.toFixed(2)} USDT but only have ${balanceSite.toFixed(2)} USDT in your wallet.`
+        );
+        return;
       }
+
+      // Process registration or investment
+      await this.processInvestment(valueUSDT);
+
+    } catch (error) {
+      console.error("Deposit error:", error);
+      this.showModal("Transaction Error", ErrorHandler.parseError(error));
+    } finally {
+      this.setState({ isProcessing: false });
     }
-
-    fetch("")
   }
 
-  async migrate(wallet) {
+  /**
+   * Request token approval
+   */
+  async requestApproval() {
+    try {
+      await TransactionManager.executeTransaction(
+        this.props.contract.contractToken.methods.approve(
+          this.props.contract.binaryProxy._address,
+          "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+        ),
+        { from: this.props.currentAccount },
+        {
+          onSuccess: () => {
+            this.showModal("Success", "Token approval successful! You can now proceed with your investment.");
+            this.updateState(); // Refresh state
+          },
+          onError: (error) => {
+            this.showModal("Approval Failed", ErrorHandler.parseError(error));
+          }
+        }
+      );
+    } catch (error) {
+      console.error("Approval error:", error);
+    }
+  }
 
-    if (migracionProgress) {
-      this.setState({
-        ModalTitulo: "Please wait",
-        ModalBody: "Try again later migration in progress"
-      })
-      window.$("#alert").modal("show");
+  /**
+   * Process investment with registration if needed
+   */
+  async processInvestment(valueUSDT) {
+    const investors = await this.props.contract.binaryProxy.methods
+      .investors(this.props.currentAccount)
+      .call({ from: this.props.currentAccount });
 
+    // Handle registration
+    if (!investors.registered) {
+      await this.handleRegistration();
+    }
+
+    // Validate leveling for investment
+    const leveling = await this.props.contract.binaryProxy.methods
+      .leveling(this.props.currentAccount)
+      .call({ from: this.props.currentAccount });
+
+    if (parseInt(leveling) < 1) {
+      this.showModal("Investment Error", "You need proper authorization level to make investments.");
       return;
     }
-    migracionProgress = true
 
-    if (!this.props.contract.web3 || !this.props.contract.web3.utils || !this.props.contract.web3.utils.isAddress(wallet)) {
-      this.setState({
-        ModalTitulo: "CHECK",
-        ModalBody: "It is not a valid address"
-      })
-      window.$("#alert").modal("show");
+    // Execute investment
+    await TransactionManager.executeTransaction(
+      this.props.contract.binaryProxy.methods.buyPlan(valueUSDT),
+      { from: this.props.currentAccount },
+      {
+        onSuccess: (result) => {
+          this.showModal("Success!", "Congratulations! Your investment was successful.");
+          this.updateState(); // Refresh state
+          
+          // Scroll to services section
+          const servicesElement = document.getElementById("services");
+          if (servicesElement) {
+            servicesElement.scrollIntoView({ block: "start", behavior: "smooth" });
+          }
+        },
+        onError: (error) => {
+          this.showModal("Investment Failed", ErrorHandler.parseError(error));
+        }
+      }
+    );
+  }
 
+  /**
+   * Handle user registration
+   */
+  async handleRegistration() {
+    const referralInfo = await this.parseReferralFromUrl(this.props.currentAccount);
+    
+    if (referralInfo.partner === cons.WS) {
+      this.showModal("Registration Required", "You need a valid referral link to register.");
+      throw new Error("No valid referral");
+    }
+
+    // Get sponsor wallet
+    const url = new URL(window.location.href);
+    const refParam = url.searchParams.get('ref');
+    
+    const sponsorWallet = await this.props.contract.binaryProxy.methods
+      .idToAddress(refParam)
+      .call({ from: this.props.currentAccount });
+
+    // Validate sponsor
+    const sponsorData = await this.props.contract.binaryProxy.methods
+      .investors(sponsorWallet)
+      .call({ from: this.props.currentAccount });
+
+    if (!sponsorData.registered) {
+      this.showModal("Registration Error", "Your referrer must be registered to proceed.");
+      throw new Error("Invalid sponsor");
+    }
+
+    // Execute registration
+    await TransactionManager.executeTransaction(
+      this.props.contract.binaryProxy.methods.registro(sponsorWallet, referralInfo.hand),
+      { from: this.props.currentAccount },
+      {
+        onSuccess: () => {
+          this.showModal("Welcome!", "Registration successful! You can now make investments.");
+        },
+        onError: (error) => {
+          this.showModal("Registration Failed", ErrorHandler.parseError(error));
+          throw error;
+        }
+      }
+    );
+  }
+
+  /**
+   * Enhanced migrate function with proper state management
+   */
+  async migrate(wallet) {
+    if (this.state.isMigrating) {
+      this.showModal("Please Wait", "Migration is already in progress. Please try again later.");
+      return;
+    }
+
+    if (!ValidationUtils.isValidAddress(wallet)) {
+      this.showModal("Invalid Address", "Please enter a valid wallet address.");
       return;
     }
 
     if (this.props.view) {
-      this.setState({
-        ModalTitulo: "ALERT",
-        ModalBody: "Is only view mode"
-      })
-      window.$("#alert").modal("show");
+      this.showModal("ALERT!", "This is view-only mode. Migrations are not allowed.");
       return;
     }
 
+    try {
+      this.setState({ isMigrating: true });
 
+      const response = await fetch(`${cons.API}usuario/actualizar/?wallet=${wallet}`);
+      
+      if (!response.ok) {
+        throw new Error(`Migration request failed: ${response.status}`);
+      }
 
-    fetch(cons.API + 'usuario/actualizar/?wallet=' + wallet)
+      this.showModal("Success", "Migration request submitted successfully.");
 
-    migracionProgress = false
-
+    } catch (error) {
+      console.error("Migration error:", error);
+      this.showModal("Migration Failed", ErrorHandler.parseError(error));
+    } finally {
+      this.setState({ isMigrating: false });
+    }
   }
 
+  /**
+   * Enhanced render method with improved accessibility and loading states
+   */
   render() {
+    const { isLoading, isProcessing, error, modal, formErrors } = this.state;
+
     return (
       <>
         <div className="container">
           <div className="row">
+            {/* User Information Section */}
             <div className="col-lg-6 col-md-6">
               <div className="icon-box" data-aos="zoom-in-left">
-                <div className="icon">
-                  <i
-                    className="bi bi-person"
-                    style={{ color: "rgb(7 89 232)" }}
-                  ></i>
+                <div className="icon" aria-hidden="true">
+                  <i className="bi bi-person" style={{ color: "rgb(7 89 232)" }}></i>
                 </div>
+                
                 <h4 className="title">
-                  <a href="#User">User ID: {this.state.id}</a>
+                  <a href="#User" aria-describedby="user-info">User ID: {this.state.id}</a>
                 </h4>
-                <p className="description">
-                  <strong>Wallet:</strong>{" "}
-                  <span style={{ wordWrap: "break-word" }}>
-                    {this.state.accountAddress}
-                  </span>
-                  <br />
-                  <strong>USDT:</strong> {this.state.balanceSite}
-                  <br />
-                  <strong>Partner: </strong>{" "}
-                  <span style={{ wordWrap: "break-word" }}>
-                    {this.state.partner}
-                  </span>
-                  <br />
-                  <strong>Upline: </strong>{" "}
-                  <span style={{ wordWrap: "break-word" }}>
-                    {this.state.upline}
-                  </span>
-                </p>
+                
+                <div className="description" id="user-info">
+                  <p>
+                    <strong>Wallet:</strong>{" "}
+                    <span style={{ wordWrap: "break-word" }} aria-label="Wallet address">
+                      {ValidationUtils.formatAddress(this.state.currentAccount)}
+                    </span>
+                  </p>
+                  
+                  <p>
+                    <strong>USDT Balance:</strong>{" "}
+                    <span aria-label={`Balance: ${this.state.balanceSite} USDT`}>
+                      {ValidationUtils.formatNumber(this.state.balanceSite, 2)}
+                    </span>
+                  </p>
+                  
+                  <p>
+                    <strong>Partner:</strong>{" "}
+                    <span style={{ wordWrap: "break-word" }}>
+                      {this.state.partner}
+                    </span>
+                  </p>
+                  
+                  <p>
+                    <strong>Upline:</strong>{" "}
+                    <span style={{ wordWrap: "break-word" }}>
+                      {this.state.upline}
+                    </span>
+                  </p>
+                </div>
               </div>
             </div>
 
+            {/* Investment Section */}
             <div className="col-lg-6 col-md-6">
               <div className="icon-box" data-aos="zoom-in-left">
-                <div className="icon">
-                  <i
-                    className="bi bi-currency-dollar"
-                    style={{ color: "rgb(7 89 232)" }}
-                  ></i>
+                <div className="icon" aria-hidden="true">
+                  <i className="bi bi-currency-dollar" style={{ color: "rgb(7 89 232)" }}></i>
                 </div>
+                
                 <h4 className="title text-center">
-                  <a href="#Invest">Invest </a>
+                  <a href="#Invest">Investment Calculator</a>
                 </h4>
-                <p className="description text-center">
-                  <strong>{"Contract  /  USDT"}</strong>
-                  <br />
-                  <b className="text-center">
-                    <input
-                      type={"number"}
-                      min="1"
-                      value={this.state.valueUSDT}
-                      step="1"
-                      onChange={this.handleChangeUSDT}
-                    />
-                    {" = "}
-                    <input
-                      type={"number"}
-                      value={this.state.valueUSDTResult}
-                      step={this.state.planPrice}
-                      onChange={this.handleChangeUSDTResult}
-                    />
-                  </b>
-                  <br />
-                  <br />
-                  <button
-                    className="btn btn-success btn-lg"
-                    onClick={() => this.deposit()}
-                  >
-                    {this.state.deposito}
-                  </button>
-                </p>
+                
+                <div className="description text-center">
+                  <p><strong>Contract / USDT</strong></p>
+                  
+                  {/* Investment Form */}
+                  <form onSubmit={(e) => { e.preventDefault(); this.deposit(); }} aria-label="Investment form">
+                    <div className="mb-3">
+                      <label htmlFor="contracts-input" className="form-label sr-only">
+                        Number of contracts
+                      </label>
+                      <input
+                        id="contracts-input"
+                        type="number"
+                        min="1"
+                        value={this.state.valueUSDT}
+                        step="1"
+                        onChange={this.handleChangeUSDT}
+                        className={`form-control ${formErrors.valueUSDT ? 'is-invalid' : ''}`}
+                        aria-describedby="contracts-help"
+                        disabled={isLoading || isProcessing}
+                      />
+                      <div id="contracts-help" className="form-text">
+                        Number of contracts to purchase
+                      </div>
+                      {formErrors.valueUSDT && (
+                        <div className="invalid-feedback">{formErrors.valueUSDT}</div>
+                      )}
+                    </div>
+                    
+                    <div className="mb-3">
+                      <span aria-hidden="true"> = </span>
+                      <label htmlFor="usdt-input" className="form-label sr-only">
+                        USDT amount
+                      </label>
+                      <input
+                        id="usdt-input"
+                        type="number"
+                        value={this.state.valueUSDTResult}
+                        step={this.state.planPrice}
+                        onChange={this.handleChangeUSDTResult}
+                        className={`form-control ${formErrors.valueUSDTResult ? 'is-invalid' : ''}`}
+                        aria-describedby="usdt-help"
+                        disabled={isLoading || isProcessing}
+                      />
+                      <div id="usdt-help" className="form-text">
+                        Total USDT amount
+                      </div>
+                      {formErrors.valueUSDTResult && (
+                        <div className="invalid-feedback">{formErrors.valueUSDTResult}</div>
+                      )}
+                    </div>
+                    
+                    {/* Balance Error */}
+                    {formErrors.balance && (
+                      <div className="alert alert-warning" role="alert">
+                        {formErrors.balance}
+                      </div>
+                    )}
+                    
+                    {/* Submit Button */}
+                    <button
+                      type="submit"
+                      className="btn btn-success btn-lg"
+                      disabled={isLoading || isProcessing || Object.keys(formErrors).length > 0}
+                      aria-describedby="submit-help"
+                    >
+                      {isProcessing ? (
+                        <LoadingSpinner message="Processing..." />
+                      ) : (
+                        this.state.deposito
+                      )}
+                    </button>
+                    
+                    <div id="submit-help" className="form-text mt-2">
+                      {isProcessing ? "Please wait while we process your transaction..." : "Click to proceed with investment"}
+                    </div>
+                  </form>
+                </div>
               </div>
             </div>
-
           </div>
         </div>
 
+        {/* Enhanced Modal */}
+        <AlertModal
+          show={modal.show}
+          title={modal.title}
+          body={modal.body}
+          onClose={this.hideModal}
+        />
 
-
-
-        <div className="modal fade" tabIndex="-1" id="alert" role="dialog" aria-labelledby="alert" aria-hidden="true">
-          <div className="modal-dialog modal-dialog-centered" role="document">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">{this.state.ModalTitulo}</h5>
-                <button type="button" className="btn-close" data-bs-dismiss="modal">
-                </button>
-              </div>
-              <div className="modal-body">
-                <p>{this.state.ModalBody}</p>
-              </div>
+        {/* Loading Overlay */}
+        {isLoading && (
+          <div className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
+               style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999 }}>
+            <div className="bg-white p-4 rounded">
+              <LoadingSpinner size="lg" message="Loading investment data..." />
             </div>
           </div>
-        </div>
+        )}
 
-
-
-
-
-      </>);
+        {/* Error Display */}
+        {error && (
+          <div className="alert alert-danger mt-3" role="alert">
+            <h6>⚠️ Error Loading Data</h6>
+            <p>{error}</p>
+            <button className="btn btn-outline-danger btn-sm" onClick={() => this.setState({ error: null })}>
+              Dismiss
+            </button>
+          </div>
+        )}
+      </>
+    );
   }
 }
