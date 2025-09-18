@@ -1,32 +1,57 @@
 {
-  "name": "api",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "aimas-pro-tiered-api",
+  "version": "2.0.0",
+  "description": "AIMAS PRO Binary System API with Tiered Access Control",
+  "main": "tieredIndex.js",
   "scripts": {
-    "dev": "nodemon index.js",
-    "start": "node index.js"
+    "start": "node tieredIndex.js",
+    "dev": "nodemon tieredIndex.js",
+    "test": "node ../test-tiered-system.js",
+    "test:verbose": "VERBOSE_TESTS=true node ../test-tiered-system.js",
+    "migrate": "node scripts/migrate-to-tiered.js",
+    "setup": "node scripts/setup-databases.js"
   },
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "bignumber.js": "^9.1.2",
-    "body-parser": "^1.20.2",
-    "cors": "^2.8.5",
-    "cryptr": "^6.2.0",
-    "dotenv": "^16.0.3",
     "express": "^4.18.2",
-    "mongoose": "^8.2.0",
-    "node-cron": "^3.0.3",
-    "web3": "^4.9.0"
+    "cors": "^2.8.5",
+    "body-parser": "^1.20.2",
+    "mongoose": "^7.5.0",
+    "mongodb": "^5.7.0",
+    "web3": "^4.1.1",
+    "ethers": "^5.7.2",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^2.4.3",
+    "crypto": "^1.0.1",
+    "cryptr": "^6.3.0",
+    "bignumber.js": "^9.1.1",
+    "node-cron": "^3.0.2",
+    "express-rate-limit": "^6.10.0",
+    "express-validator": "^7.0.1",
+    "helmet": "^7.0.0",
+    "compression": "^1.7.4",
+    "dotenv": "^16.3.1"
   },
   "devDependencies": {
-    "@types/node": "^22.4.1",
-    "nodemon": "^3.1.0"
+    "nodemon": "^3.0.1",
+    "jest": "^29.6.2",
+    "supertest": "^6.3.3",
+    "node-fetch": "^2.6.12"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "keywords": [
+    "blockchain",
+    "binary-system",
+    "tiered-access",
+    "authentication",
+    "web3",
+    "investment-tracking"
+  ],
+  "author": "AIMAS PRO Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aimas-pro/tiered-access-system.git"
   }
-  , 
-"browser": { 
-    "crypto": false 
 }
-}
-
