@@ -1374,12 +1374,11 @@ export default class Oficina extends Component {
           onClose={this.hideModal}
         />
 
-        {/* Loading Overlay */}
+        {/* Loading Indicator - Non-blocking */}
         {isLoading && (
-          <div className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
-               style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999 }}>
-            <div className="bg-white p-4 rounded">
-              <LoadingSpinner size="lg" message="Loading office data..." />
+          <div className="alert alert-info mt-3" role="status" aria-live="polite">
+            <div className="d-flex align-items-center">
+              <LoadingSpinner size="sm" message="Loading office data..." />
             </div>
           </div>
         )}

@@ -53,10 +53,8 @@ export default class Home extends Component {
    * Component lifecycle: Initialize data fetching with proper cleanup
    */
   componentDidMount() {
-    // Initial fetch after 3 seconds with error handling
-    this.initialFetchTimeout = setTimeout(() => {
-      this.fetchInvestorData();
-    }, 3000);
+    // Initial fetch immediately with error handling
+    this.fetchInvestorData();
 
     // Set up periodic updates every 30 seconds
     this.dataFetchInterval = setInterval(() => {

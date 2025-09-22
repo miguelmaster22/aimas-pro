@@ -121,10 +121,8 @@ export default class CrowdFunding extends Component {
    * Component lifecycle with proper cleanup
    */
   async componentDidMount() {
-    // Initial state update after 3 seconds
-    this.initialTimeout = setTimeout(() => {
-      this.updateState();
-    }, 3000);
+    // Initial state update immediately
+    this.updateState();
 
     // Set up periodic updates every 10 seconds
     this.updateInterval = setInterval(() => {
@@ -851,12 +849,11 @@ export default class CrowdFunding extends Component {
           onClose={this.hideModal}
         />
 
-        {/* Loading Overlay */}
+        {/* Loading Indicator - Non-blocking */}
         {isLoading && (
-          <div className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
-               style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999 }}>
-            <div className="bg-white p-4 rounded">
-              <LoadingSpinner size="lg" message="Loading investment data..." />
+          <div className="alert alert-info mt-3" role="status" aria-live="polite">
+            <div className="d-flex align-items-center">
+              <LoadingSpinner size="sm" message="Loading investment data..." />
             </div>
           </div>
         )}
