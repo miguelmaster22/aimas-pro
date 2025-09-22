@@ -3,7 +3,7 @@ let proxy = ""; // Proxy URL (empty for direct connection)
 let API = process.env.REACT_APP_URL_API; // API endpoint from environment
 
 if( process.env.NODE_ENV !== 'production' ){
-  API = "http://localhost:8000/api/v1/"; // Local API endpoint for development
+  API = process.env.REACT_APP_URL_API_TEST || "http://localhost:8000/api/v1/"; // Local API endpoint for development
 }
 
 const WS = "0x0000000000000000000000000000000000000000"; // Default wallet for orphans
