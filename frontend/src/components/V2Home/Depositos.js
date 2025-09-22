@@ -131,7 +131,7 @@ export default class Depositos extends Component {
     // Set up periodic updates every 3 seconds
     this.updateInterval = setInterval(() => {
       this.processInvestorData();
-    }, 3000);
+    }, 30*1000);
     
     // Initial data processing
     this.processInvestorData();
