@@ -12,7 +12,6 @@
  * - Optimized performance with debounced inputs
  */
 import React, { Component } from "react";
-import cons from "../../cons.js";
 import { ErrorHandler, ValidationUtils, TransactionManager } from "../../utils/errorHandler";
 
 // BigNumber for precise decimal calculations
@@ -410,8 +409,7 @@ export default class Datos extends Component {
    * Generate admin action buttons based on user permissions
    */
   generateAdminActions() {
-    const { wallet, plan, cantidad } = this.state;
-    const { processingStates } = this.state;
+    const { wallet, cantidad } = this.state;
 
     const actions = [
       {

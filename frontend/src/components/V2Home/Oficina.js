@@ -926,9 +926,10 @@ export default class Oficina extends Component {
           wallet={wallet}
           invested={invested}
           migrated={userData.registered ? 'true' : 'false'}
-          children={children}
           onClick={() => {}} // Prevent additional clicks on the container
-        />
+        >
+          {children}
+        </WalletInfo>
       );
 
       // Update the appropriate side

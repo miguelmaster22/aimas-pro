@@ -1,16 +1,3 @@
-/**
- * Enhanced Home Component for V2 Binary System Dashboard
- * 
- * IMPROVEMENTS MADE:
- * - Fixed memory leaks with proper interval cleanup
- * - Added custom error boundaries and loading states
- * - Implemented proper state management patterns
- * - Enhanced accessibility with ARIA labels
- * - Optimized performance with memoization
- * - Added comprehensive error handling
- * - Improved responsive design
- * - Enhanced user experience with loading indicators
- */
 import React, { Component } from "react";
 
 // Import sub-components for different sections
@@ -18,59 +5,23 @@ import CrowdFunding from "./CrowdFunding";
 import Oficina from "./Oficina";
 import Datos from "./Datos";
 import Depositos from "./Depositos";
+import ErrorBoundary from "../ErrorBoundary";
 import cons from "../../cons";
-import { ErrorHandler, ValidationUtils } from "../../utils/errorHandler";
+import { ValidationUtils } from "../../utils/errorHandler";
 
 // BigNumber for precise decimal calculations
 const BigNumber = require("bignumber.js");
 
-// Loading component for better UX
+// Simple Loading Spinner Component
 const LoadingSpinner = ({ message = "Loading..." }) => (
-  <div className="d-flex justify-content-center align-items-center p-4" role="status" aria-live="polite">
-    <div className="spinner-border text-primary me-3" aria-hidden="true"></div>
-    <span className="sr-only">{message}</span>
+  <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "200px" }}>
+    <div className="text-center">
+      <div className="spinner-border text-primary" role="status" aria-hidden="true"></div>
+      <div className="mt-2">{message}</div>
+    </div>
   </div>
 );
 
-// Custom Error Boundary Component
-class ErrorBoundary extends Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false, error: null, errorInfo: null };
-  }
-
-  static getDerivedStateFromError(error) {
-    return { hasError: true };
-  }
-
-  componentDidCatch(error, errorInfo) {
-    this.setState({
-      error: error,
-      errorInfo: errorInfo
-    });
-    console.error("Component error:", error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="alert alert-danger m-4" role="alert">
-          <h4 className="alert-heading">Something went wrong!</h4>
-          <p>{this.state.error && this.state.error.toString()}</p>
-          <hr />
-          <button 
-            className="btn btn-outline-danger" 
-            onClick={() => this.setState({ hasError: false, error: null, errorInfo: null })}
-          >
-            Try again
-          </button>
-        </div>
-      );
-    }
-
-    return this.props.children;
-  }
-}
 
 /**
  * Enhanced Home component with improved error handling, performance, and accessibility
@@ -91,6 +42,7 @@ export default class Home extends Component {
     this.fetchInvestorData = this.fetchInvestorData.bind(this);
     this.handleError = this.handleError.bind(this);
     this.resetError = this.resetError.bind(this);
+    this.connectWallet = this.connectWallet.bind(this);
     
     // Store interval reference for cleanup
     this.dataFetchInterval = null;
@@ -128,19 +80,12 @@ export default class Home extends Component {
   }
 
   /**
-   * Enhanced error handler with user-friendly messages
+   * Handle errors with proper logging and state management
    */
-  handleError(error, context = "Data fetch") {
-    console.error(`${context} error:`, error);
-    
-    const userMessage = ErrorHandler.parseError(error);
-    
+  handleError(error, context = "Unknown error") {
+    console.error(`${context}:`, error);
     this.setState({
-      error: {
-        message: userMessage,
-        context,
-        timestamp: new Date().toISOString()
-      },
+      error: error,
       isLoading: false
     });
   }
@@ -157,15 +102,103 @@ export default class Home extends Component {
   }
 
   /**
+   * Manual wallet connection method
+   */
+  async connectWallet() {
+    try {
+      if (typeof window.ethereum === 'undefined') {
+        alert('MetaMask is not installed. Please install MetaMask and refresh the page.');
+        return;
+      }
+
+      console.log('Attempting manual wallet connection...');
+      
+      // Request account access
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      
+      if (accounts && accounts.length > 0) {
+        console.log('Wallet connected successfully:', accounts[0]);
+        
+        // Wait for App.js to update props, then retry data fetch
+        setTimeout(() => {
+          this.fetchInvestorData();
+        }, 2000);
+      } else {
+        alert('No accounts found. Please make sure MetaMask is unlocked.');
+      }
+    } catch (error) {
+      console.error('Manual wallet connection failed:', error);
+      if (error.code === 4001) {
+        alert('Connection request was rejected. Please try again and approve the connection.');
+      } else {
+        alert('Failed to connect wallet: ' + error.message);
+      }
+    }
+  }
+
+  /**
    * Enhanced investor data fetching with comprehensive error handling
    */
   async fetchInvestorData() {
     try {
       this.setState({ isLoading: true, error: null });
 
-      // Validate required props
-      if (!this.props.contract?.binaryProxy || !this.props.currentAccount) {
-        throw new Error("Contract or account not available");
+      // Enhanced diagnostic logging
+      console.log("=== DIAGNOSTIC INFO ===");
+      console.log("Props contract:", this.props.contract);
+      console.log("Contract binaryProxy:", this.props.contract?.binaryProxy);
+      console.log("Contract binaryProxy address:", this.props.contract?.binaryProxy?._address);
+      console.log("Current account:", this.props.currentAccount);
+      console.log("Contract web3:", this.props.contract?.web3);
+      console.log("Contract contractToken:", this.props.contract?.contractToken);
+      console.log("======================");
+
+      // Check for MetaMask connection issues - but allow page to load with defaults
+      if (!this.props.currentAccount || this.props.currentAccount === "0x0000000000000000000000000000000000000000") {
+        console.warn("No valid account found, loading default empty state");
+        
+        // Set default empty investor data so page can still be interactive
+        const defaultInvestor = {
+          admin: this.props.admin,
+          wallet: "0x0000000000000000000000000000000000000000",
+          registered: false,
+          invested: 0,
+          withdrawn: 0,
+          paidAt: 0,
+          decimals: 18,
+          pasivo: 0,
+          ventaDirecta: 0,
+          retirableBinario: 0,
+          matchingBonus: 0,
+          retirable: 0,
+          id: "##",
+          directos: 0,
+          directosL: [],
+          directosR: [],
+          listaDepositos: this.renderNoAccountMessage(),
+          totalInvest: 0,
+          totalLeader: 0,
+          lastPay: 0,
+          nextPay: Date.now() + 86400000,
+          balanceUSDTContract: 0
+        };
+
+        this.setState({
+          investor: defaultInvestor,
+          isLoading: false,
+          lastUpdated: new Date().toISOString(),
+          updateCount: this.state.updateCount + 1
+        });
+        return;
+      }
+
+      // Validate required props with detailed error messages
+      if (!this.props.contract) {
+        throw new Error("Contract object not available. Please refresh the page and ensure MetaMask is connected.");
+      }
+      
+      if (!this.props.contract.binaryProxy) {
+        throw new Error("Binary proxy contract not initialized. Please check your network connection and ensure you're on BNB Smart Chain.");
       }
 
       if (!ValidationUtils.isValidAddress(this.props.currentAccount)) {
@@ -561,6 +594,26 @@ export default class Home extends Component {
   }
 
   /**
+   * Render no account message for when MetaMask is not connected
+   */
+  renderNoAccountMessage() {
+    return (
+      <div className="box alert alert-info" role="status">
+        <h3 className="title">🔗 Connect Your Wallet</h3>
+        <p>Please connect your MetaMask wallet to view your account information and interact with the platform.</p>
+        <div className="mt-3">
+          <button
+            className="btn btn-primary"
+            onClick={this.connectWallet}
+          >
+            🔗 Connect MetaMask
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  /**
    * Render deposit error message
    */
   renderDepositError(message = "Error reading deposits. Please contact support.") {
@@ -616,17 +669,48 @@ export default class Home extends Component {
 
     // Show error state
     if (error) {
+      const isMetaMaskError = error.message.includes('MetaMask') || error.message.includes('wallet');
+      
       return (
         <div className="container">
           <div className="alert alert-danger" role="alert">
-            <h4 className="alert-heading">⚠️ Data Loading Error</h4>
+            <h4 className="alert-heading">⚠️ Connection Error</h4>
             <p>{error.message}</p>
+            
+            {isMetaMaskError && (
+              <div className="mt-3">
+                <h6>Troubleshooting Steps:</h6>
+                <ol className="small">
+                  <li>Make sure MetaMask is installed and unlocked</li>
+                  <li>Connect your wallet to this site</li>
+                  <li>Ensure you&apos;re on BNB Smart Chain network</li>
+                  <li>Refresh the page after connecting</li>
+                </ol>
+              </div>
+            )}
+            
             <hr />
-            <p className="mb-0">
+            <div className="d-flex gap-2">
               <button className="btn btn-outline-danger" onClick={this.resetError}>
                 🔄 Retry
               </button>
-            </p>
+              {isMetaMaskError && (
+                <>
+                  <button
+                    className="btn btn-outline-success"
+                    onClick={this.connectWallet}
+                  >
+                    🔗 Connect Wallet
+                  </button>
+                  <button
+                    className="btn btn-outline-primary"
+                    onClick={() => window.location.reload()}
+                  >
+                    🔄 Refresh Page
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       );

@@ -159,11 +159,37 @@ export class ErrorHandler {
   static handleContractError(error, functionName = '') {
     const message = this.parseError(error);
     const context = functionName ? `Contract call (${functionName})` : 'Contract call';
-    
+
     console.error(`${context} Error:`, error);
     SimpleNotification.error(`${context} failed: ${message}`, 6000);
-    
+
     return message;
+  }
+
+  // Handle critical application errors with simple alert
+  static handleCriticalError(error, context = 'Application Error') {
+    // Log to console first
+    console.error(`${context}:`, error);
+
+    // Show simple alert to user (non-intrusive, doesn't interfere with app)
+    setTimeout(() => {
+      alert('Something went wrong. Please contact support if this issue persists.');
+    }, 100);
+
+    return error;
+  }
+
+  // Handle unhandled promise rejections
+  static handleUnhandledRejection(event) {
+    console.error('Unhandled promise rejection:', event.reason, event.promise);
+
+    // Show alert for unhandled errors
+    setTimeout(() => {
+      alert('An unexpected error occurred. Please contact support if this issue persists.');
+    }, 100);
+
+    // Prevent the default browser error handling
+    event.preventDefault();
   }
 }
 

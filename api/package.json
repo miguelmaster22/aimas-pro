@@ -2,14 +2,10 @@
   "name": "aimas-pro-tiered-api",
   "version": "2.0.0",
   "description": "AIMAS PRO Binary System API with Tiered Access Control",
-  "main": "tieredIndex.js",
+  "main": "index.js",
   "scripts": {
-    "start": "node tieredIndex.js",
-    "dev": "nodemon tieredIndex.js",
-    "test": "node ../test-tiered-system.js",
-    "test:verbose": "VERBOSE_TESTS=true node ../test-tiered-system.js",
-    "migrate": "node scripts/migrate-to-tiered.js",
-    "setup": "node scripts/setup-databases.js"
+    "start": "node index.js",
+    "dev": "nodemon index.js"
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -29,7 +25,14 @@
     "express-validator": "^7.0.1",
     "helmet": "^7.0.0",
     "compression": "^1.7.4",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "node-cache": "^5.1.2",
+    "redis": "^4.6.7",
+    "ws": "^8.13.0",
+    "express-ws": "^5.0.2",
+    "validator": "^13.9.0",
+    "moment": "^2.29.4",
+    "lodash": "^4.17.21"
   },
   "devDependencies": {
     "nodemon": "^3.0.1",

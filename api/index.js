@@ -18,7 +18,7 @@ require("dotenv").config(); // Environment variables
 function delay(s) { return new Promise(res => setTimeout(res, s * 1000)); }
 
 // Database and configuration constants
-const uriMongoDB = process.env.APP_URIMONGODB + "aimas_pro?ssl=true&authSource=admin&retryWrites=true&w=majority"; // MongoDB connection string
+const uriMongoDB = process.env.NODE_ENV === 'production' ? process.env.APP_URIMONGODB: process.env.APP_URIMONGODB_TEST ; // MongoDB connection string
 const WalletVacia = "0x0000000000000000000000000000000000000000"; // Empty wallet address
 const factorBlock = 1.5; // Gas price multiplier for transactions
 const factorFail = 30; // Gas price for failed transactions

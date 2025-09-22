@@ -597,7 +597,7 @@ export default class CrowdFunding extends Component {
       this.props.contract.binaryProxy.methods.buyPlan(valueUSDT),
       { from: this.props.currentAccount },
       {
-        onSuccess: (result) => {
+        onSuccess: (_result) => {
           this.showModal("Success!", "Congratulations! Your investment was successful.");
           this.updateState(); // Refresh state
           
