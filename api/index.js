@@ -221,9 +221,7 @@ iniciarAplicacion(); // Start application initialization
 
 async function iniciarAplicacion() {
   if (!appReady) {
-    await mongoose.connect(uriMongoDB, {
-      tls: true // Enable TLS for MongoDB connection
-    })
+    await mongoose.connect(uriMongoDB)
       .then(async () => {
         console.log("MongoDB Connected"); // Connection successful
         console.log(">---- App Ready! -------<"); // App initialization complete

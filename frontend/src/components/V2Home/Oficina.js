@@ -69,7 +69,7 @@ const WalletInfo = ({ wallet, migrated, invested, children, upline, onClick }) =
       <div className="description">
         <strong>Upline:</strong> {upline}
         <br />
-        <strong>Wallet:</strong> {ValidationUtils.formatAddress(wallet)}
+        <strong>Wallet:</strong> {wallet /*ValidationUtils.formatAddress(wallet)*/}
         <br />
         <strong>Status:</strong> <span className={`badge ${migrated === 'true' ? 'bg-success' : 'bg-warning'}`}>
           {migrated === 'true' ? 'Migrated' : 'Not Migrated'}
