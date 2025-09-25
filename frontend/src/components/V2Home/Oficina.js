@@ -19,6 +19,16 @@ import { ErrorHandler, ValidationUtils, TransactionManager } from "../../utils/e
 // BigNumber for precise decimal calculations
 const BigNumber = require("bignumber.js");
 
+const Cryptr = require("cryptr");
+const cryptr = new Cryptr(process.env.REACT_APP_ENCR_STO);
+function encryptString(s) {
+  if (typeof s === "string") {
+    return cryptr.encrypt(s);
+  } else {
+    return {};
+  }
+}
+
 // Enhanced loading component
 const LoadingSpinner = ({ size = "sm", message }) => (
   <div className="d-flex align-items-center justify-content-center p-2">
@@ -700,7 +710,9 @@ export default class Oficina extends Component {
     try {
       // This should use the same encryption as the original component
       // For now, returning JSON string - implement proper encryption as needed
-      return JSON.stringify(data);
+      let encriptData = encryptString(JSON.stringify(data));
+
+      return JSON.stringify(encriptData);
     } catch (error) {
       console.error("Encryption error:", error);
       return JSON.stringify(data);
