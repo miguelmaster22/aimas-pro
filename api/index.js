@@ -18,7 +18,7 @@ require("dotenv").config(); // Environment variables
 function delay(s) { return new Promise(res => setTimeout(res, s * 1000)); }
 
 // Database and configuration constants
-const uriMongoDB = process.env.REACT_APP_ENV === 'production' ? process.env.APP_URIMONGODB: process.env.APP_URIMONGODB_TEST ; // MongoDB connection string
+const uriMongoDB = process.env.REACT_APP_ENV === 'production' ? process.env.APP_URIMONGODB : process.env.APP_URIMONGODB_TEST; // MongoDB connection string
 const WalletVacia = "0x0000000000000000000000000000000000000000"; // Empty wallet address
 const factorBlock = 1.5; // Gas price multiplier for transactions
 const factorFail = 30; // Gas price for failed transactions
@@ -210,11 +210,16 @@ function encryptString(s) {
 
 // Decrypt string for secure API communication
 function decryptString(s) {
-  if (typeof s === "string") {
+
+  try {
     return cryptr.decrypt(s);
-  } else {
-    return {};
+
+  } catch (error) {
+    console.error("Decryption error:", error);
+    console.log("String to decrypt:", s);
+    return s; // Return original string on error
   }
+
 }
 
 iniciarAplicacion(); // Start application initialization
@@ -424,7 +429,7 @@ app.post(RUTA + "calculate/retiro", async (req, res) => {
     message: "do nothing"
   };
 
-  if (typeof req.body.data === "string") {
+  if (req.body && req.body.data && typeof req.body.data === "string") {
     var data = JSON.parse(decryptString(req.body.data));
 
 
