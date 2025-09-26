@@ -102,11 +102,11 @@ const App = () => {
 
       // Parse URL for wallet viewing
       const { targetWallet } = await parseUrlParams(web3, binaryProxy, accounts[0]);
-      console.log("Target wallet after URL parsing:", targetWallet);
+      //console.log("Target wallet after URL parsing:", targetWallet);
 
       // Ensure we have a valid account - fallback to first account if parsing failed
       const finalAccount = targetWallet || accounts[0];
-      console.log("Final account to use:", finalAccount);
+      //console.log("Final account to use:", finalAccount);
 
       // Set state with proper values
       setConectado(true);
@@ -118,7 +118,7 @@ const App = () => {
         binaryProxy
       });
 
-      console.log("App.js state updated - currentAccount should be:", finalAccount);
+      //console.log("App.js state updated - currentAccount should be:", finalAccount);
 
     } catch (error) {
       console.error("Connection error:", error);

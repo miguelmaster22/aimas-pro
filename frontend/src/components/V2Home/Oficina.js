@@ -577,7 +577,7 @@ export default class Oficina extends Component {
   async withdraw() {
     if (this.props.view) {
       this.showModal("View Mode", "This is view-only mode. Transactions are not allowed.", "warning");
-      return;
+      //return;
     }
 
     try {

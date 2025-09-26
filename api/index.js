@@ -258,7 +258,6 @@ async function hacerTakeProfit(wallet) {
     result: false,
   };
 
-  let retBinario = new BigNumber(0);
   let user = null
   let newUser = {}
 
@@ -276,54 +275,27 @@ async function hacerTakeProfit(wallet) {
   let puntosReclamados = puntosL.toNumber() <= puntosR.toNumber() ? puntosL : puntosR
 
   //sobre estos puntos calcula lo que puede retirar en USDT
-  let retBin = retirableBinario(puntosL.toString(10), puntosR.toString(10))
+  let retiroBinario = retirableBinario(puntosL.toString(10), puntosR.toString(10))
 
   let puntosUsados = new BigNumber(0)
 
-  if (new BigNumber(retBin).toNumber() <= 0) {
-    retBin = 0
+  if (new BigNumber(retiroBinario).toNumber() <= 0) {
+    retiroBinario = 0
   } else {
     newUser.lReclamados = new BigNumber(user.lReclamados).plus(puntosReclamados).toString(10)
     newUser.rReclamados = new BigNumber(user.rReclamados).plus(puntosReclamados).toString(10)
-
 
     puntosUsados = new BigNumber(newUser.lReclamados)
 
   }
 
-  retBinario = retBin
-
-  let pRango = new BigNumber(0)
-
-  let rangoArray = []
-
-  for (let index = 0; index < 12; index++) {
-    rangoArray[index] = await contrato.methods
-      .rangoReclamado(wallet, 0)
-      .call()
-      .then((r) => {
-        //console.log(index, r);
-        return r;
-      })
-      .catch((e) => {
-        console.log(e.toString());
-        return false;
-      });
-
-  }
-
-  let truerango = true;
-
-  if (truerango) {
-    pRango = puntosUsados
-  }
 
   let gas = await contrato.methods
-    .corteBinarioDo(wallet, retBinario, pRango.toString(10), 0)
+    .corteBinarioDo(wallet, retiroBinario, puntosUsados.toString(10), 0)
     .estimateGas({ from: WALLET_API }); // gas: 1000000});
 
   await contrato.methods
-    .corteBinarioDo(wallet, retBinario, pRango.toString(10), 0)
+    .corteBinarioDo(wallet, retiroBinario, puntosUsados.toString(10), 0)
     .send({ gasPrice: gasPrice.toString(10), gas: gas })
     .then(async (r) => {
       await binario.updateOne({ wallet }, newUser)
@@ -412,7 +384,7 @@ async function estimateRetiro(wallet) {
       );
     })
     .catch((e) => {
-      result.result = true;
+      result.result = false;
       result.gas = new BigNumber(21000).times(gasPrice).times(factorFail);
       result.error = true;
       result.message = e.toString();
