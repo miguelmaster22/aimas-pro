@@ -213,7 +213,7 @@ function encryptString(s) {
 function decryptString(s) {
 
   try {
-    return cryptr.decrypt(s);
+    return JSON.parse(cryptr.decrypt(s));
 
   } catch (error) {
     console.error("Decryption error:", error);
@@ -368,7 +368,7 @@ app.post(RUTA + "retiro", async (req, res) => {
   };
 
   if (typeof req.body.data === "string") {
-    var data = JSON.parse(decryptString(req.body.data));
+    var data = decryptString(req.body.data);
 
     if (
       data.token == TOKEN &&
@@ -434,7 +434,7 @@ app.post(RUTA + "calculate/retiro", async (req, res) => {
 
   if (data && typeof data === "string") {
     result.message = "data error"
-    let dec = JSON.parse(decryptString(data));
+    let dec = decryptString(data);
     console.log(dec)
 
     result.message = "token error"
@@ -777,7 +777,7 @@ app.post(RUTA + "puntos/add", async (req, res) => {
   };
 
   if (typeof req.body.data === "string") {
-    var data = JSON.parse(decryptString(req.body.data));
+    let data = decryptString(req.body.data);
 
     if (data.token == TOKEN && data.puntos) {
 
