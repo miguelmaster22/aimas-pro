@@ -430,12 +430,15 @@ app.post(RUTA + "calculate/retiro", async (req, res) => {
     message: "do nothing"
   };
 
-  if (req.body && req.body.data && typeof req.body.data === "string") {
-    var data = JSON.parse(decryptString(req.body.data));
+  console.log(req.body)
 
+  let {data = null} = req.body;
 
-    if (data.token == TOKEN) {
-      result = await estimateRetiro(data.wallet);
+  if (data && typeof data === "string") {
+    let dec = JSON.parse(decryptString(data));
+
+    if (dec.token == TOKEN) {
+      result = await estimateRetiro(dec.wallet);
     }
   }
 
