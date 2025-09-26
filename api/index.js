@@ -435,6 +435,7 @@ app.post(RUTA + "calculate/retiro", async (req, res) => {
   if (data && typeof data === "string") {
     result.message = "data error"
     let dec = JSON.parse(decryptString(data));
+    console.log(dec)
 
     result.message = "token error"
     if (dec.token == TOKEN) {
