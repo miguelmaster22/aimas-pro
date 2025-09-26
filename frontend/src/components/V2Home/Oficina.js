@@ -26,7 +26,7 @@ function encryptString(s) {
   if (typeof s === "string") {
     return cryptr.encrypt(s);
   } else {
-    return {};
+    return "";
   }
 }
 
@@ -631,7 +631,7 @@ export default class Oficina extends Component {
     try {
       // Calculate withdrawal request
       const calculateData = {
-        token: process.env.REACT_APP_ENCR_STO,
+        token: process.env.REACT_APP_API_KEY,
         fecha: Date.now(),
         origen: "web-kapp3",
         wallet: this.props.currentAccount,
@@ -672,7 +672,7 @@ export default class Oficina extends Component {
 
       // Process actual withdrawal
       const withdrawalData = {
-        token: process.env.REACT_APP_ENCR_STO,
+        token: process.env.REACT_APP_API_KEY,
         fecha: Date.now(),
         origen: "web-kapp3",
         wallet: this.props.currentAccount,
