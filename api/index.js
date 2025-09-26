@@ -218,7 +218,7 @@ function decryptString(s) {
   } catch (error) {
     console.error("Decryption error:", error);
     console.log("String to decrypt:", s);
-    return s; // Return original string on error
+    return {}; // Return original string on error
   }
 
 }
@@ -435,9 +435,19 @@ app.post(RUTA + "calculate/retiro", async (req, res) => {
   let {data = null} = req.body;
 
   if (data && typeof data === "string") {
+    result.message = "data error"
+    console.log("entro a decrypt")
     let dec = JSON.parse(decryptString(data));
+    console.log("salio a decrypt")
 
+    result.message = "token error"
     if (dec.token == TOKEN) {
+      console.log("token ok")
+
+      result.message = "time error"
+      if (dec.fecha + 5 * 60 * 1000 >= Date.now()) {
+      }
+
       result = await estimateRetiro(dec.wallet);
     }
   }
