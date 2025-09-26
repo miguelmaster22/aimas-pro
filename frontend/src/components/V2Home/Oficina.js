@@ -713,10 +713,10 @@ export default class Oficina extends Component {
       // For now, returning JSON string - implement proper encryption as needed
       let encriptData = encryptString(JSON.stringify(data));
 
-      return JSON.stringify(encriptData);
+      return encriptData;
     } catch (error) {
       console.error("Encryption error:", error);
-      return JSON.stringify(data);
+      return data;
     }
   }
 
