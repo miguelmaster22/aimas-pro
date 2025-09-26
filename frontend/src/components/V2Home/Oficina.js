@@ -22,6 +22,7 @@ const BigNumber = require("bignumber.js");
 const Cryptr = require("cryptr");
 const cryptr = new Cryptr(process.env.REACT_APP_ENCR_STO);
 function encryptString(s) {
+  console.log("clave", process.env.REACT_APP_ENCR_STO);
   if (typeof s === "string") {
     return cryptr.encrypt(s);
   } else {

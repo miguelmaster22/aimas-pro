@@ -113,6 +113,7 @@ let redes = ["https://bsc-dataseed1.binance.org/", "https://bsc-dataseed2.binanc
 let account_1_priv = "0x" + process.env.REACT_APP_PRIVATE_KY || null; // Private key for transactions
 
 const KEY = process.env.REACT_APP_ENCR_STO || "AAAAAAAAAAAAAAAA";
+console.log("KEY: " + KEY);
 const cryptr = new Cryptr(KEY);
 const TOKEN = process.env.REACT_APP_API_KEY || "1234567890";
 
