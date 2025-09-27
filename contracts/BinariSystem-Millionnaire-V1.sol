@@ -83,6 +83,7 @@ interface Proxy_Interface {
     function admin() external view returns (address);
     function changeAdmin(address _admin) external;
     function upgradeTo(address _implementation) external;
+    function implementation() external view returns (address);
     function version() external view returns (uint256);
 }
 
@@ -132,7 +133,6 @@ contract Storage1 {
     bool public onOffWitdrawl;
     uint256 public timerOut;
     uint256 public porcent;
-    uint256 public porcentPuntosBinario;
     uint256 public directosBinario;
     uint256 public dias;
     uint256 public totalInvested;
@@ -173,53 +173,73 @@ contract Inicial is Storage1 {
             false,
             false,
             false,
+            false,
+            false,
+            false,
+            false,
             false
         ];
         rangoReclamado[msg.sender] = espaciosRango;
         idToAddress[0] = msg.sender;
         addressToId[msg.sender] = 0;
         precision = 1000; // preciocion en decimales de porcentajes 100_0
-        MIN_RETIRO = 5 * 10 ** 18;
+        MIN_RETIRO = 1 * 10 ** 18;
         MAX_RETIRO = 3000 * 10 ** 18;
         plan = 25 * 10 ** 18;
         porcientos = [500]; // 50% VD (Venta Directa)
         porcientosSalida = [8, 8, 8, 8, 8]; // 0.8% para cada nivel (8/10 = 0.8%)
-        gananciasRango = [
-            10 * 10 ** 18,
-            20 * 10 ** 18,
-            60 * 10 ** 18,
+        puntosRango = [
             100 * 10 ** 18,
             200 * 10 ** 18,
-            600 * 10 ** 18,
+            300 * 10 ** 18,
+            500 * 10 ** 18,
+
             1000 * 10 ** 18,
             2000 * 10 ** 18,
-            6000 * 10 ** 18,
+            3000 * 10 ** 18,
+            5000 * 10 ** 18,
+
             10000 * 10 ** 18,
             20000 * 10 ** 18,
             30000 * 10 ** 18,
-            50000 * 10 ** 18
-        ];
-        puntosRango = [
-            100 * 10 ** 18,
-            400 * 10 ** 18,
-            1000 * 10 ** 18,
-            4000 * 10 ** 18,
-            10000 * 10 ** 18,
-            20000 * 10 ** 18,
             50000 * 10 ** 18,
+
             100000 * 10 ** 18,
-            400000 * 10 ** 18,
-            1000000 * 10 ** 18,
-            4000000 * 10 ** 18,
-            10000000 * 10 ** 18,
-            100000000 * 10 ** 18
+            200000 * 10 ** 18,
+            300000 * 10 ** 18,
+            500000 * 10 ** 18,
+
+            1000000 * 10 ** 18
+        ];
+        gananciasRango = [
+            1 * 10 ** 18,
+            2 * 10 ** 18,
+            3 * 10 ** 18,
+            5 * 10 ** 18,
+            
+            10 * 10 ** 18,
+            20 * 10 ** 18,
+            30 * 10 ** 18,
+            50 * 10 ** 18,
+
+            100 * 10 ** 18,
+            200 * 10 ** 18,
+            300 * 10 ** 18,
+            500 * 10 ** 18,
+
+            1000 * 10 ** 18,
+            2000 * 10 ** 18,
+            3000 * 10 ** 18,
+            5000 * 10 ** 18,
+
+            10000 * 10 ** 18
+
         ];
         onOffWitdrawl = true;
         timerOut = 86400;
         porcent = 300; // 300% global return
-        porcentPuntosBinario = 200; // 20% binario (200/10 = 20%)
         directosBinario = 2;
-        dias = 365; // Default 365 days
+        dias = 365 * 1000; // Default 365 days
         lastUserId = 1;
         precioRegistro = 10 * 10 ** 18;
         walletRegistro = [
@@ -232,17 +252,17 @@ contract Inicial is Storage1 {
             0x361Db60d275b4328Fd35733b93ceB1A3D22BBf6A,
             0x4593739d3A5849562E7e647B44b9a7ee3Ba1E8D5
         ];
-        valor = [1, 5, 24]; // 1% Steven, 5% wallet1, 24% wallet2 (70% stays in contract)
+        valor = [10, 50, 240]; // 1% Steven, 5% wallet1, 24% wallet2 (70% stays in contract)
         walletFee = [
             0x642974e00445f31c50e7CEC34B24bC8b6aefd3De,
             0x2198b0D4f54925DCCA173a84708BA284Ac85Cc37,
             address(this)
         ];
-        valorFee = [80, 80, 80]; // 8% fee distributed equally among 3 wallets (8% total)
+        valorFee = [20, 20, 40]; // 8% fee distributed equally among 3 wallets (8% total)
     }
 }
 
-contract BinarySystemV3 is Inicial {
+contract Millionnaire is Inicial {
     using SafeMath for uint256;
     using Array for uint256[];
     using Array for address[];
@@ -331,7 +351,7 @@ contract BinarySystemV3 is Inicial {
                     if (referi[i] != address(0)) {
                         a = amount.mul(array[i]).div(precision);
                         if (amountUser > a) {
-                            discountDeposits(referi[i], a);
+                            //discountDeposits(referi[i], a);
                             if (_salida) {
                                 matchingBonus[referi[i]] += a;
                             } else {
@@ -345,7 +365,7 @@ contract BinarySystemV3 is Inicial {
                                 ventaDirecta[referi[i]] += amountUser;
                             }
                             totalRefRewards += amountUser;
-                            discountDeposits(referi[i], amountUser);
+                            //discountDeposits(referi[i], amountUser);
                         }
                     } else {
                         break;
@@ -423,7 +443,7 @@ contract BinarySystemV3 is Inicial {
             if (wallet[i] != address(this)) {
                 USDT_Contract.transfer(
                     wallet[i],
-                    _value.mul(valor[i]).div(100)
+                    _value.mul(valor[i]).div(precision)
                 );
             }
         }
@@ -540,13 +560,13 @@ contract BinarySystemV3 is Inicial {
             if (walletFee[i] != address(this)) {
                 USDT_Contract.transfer(
                     walletFee[i],
-                    _value.mul(valorFee[i]).div(1000)
+                    _value.mul(valorFee[i]).div(precision)
                 );
             }
             totalFee = totalFee.add(valorFee[i]);
         }
 
-        uint256 userAmount = _value.mul(1000 - totalFee).div(1000);
+        uint256 userAmount = _value.mul(precision - totalFee).div(precision);
         USDT_Contract.transfer(msg.sender, userAmount);
         rewardReferers(msg.sender, _value, porcientosSalida, true);
 
