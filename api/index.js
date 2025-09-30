@@ -144,7 +144,7 @@ let nonces = 0; // Transaction nonce counter
 let gasPrice = "1000000000"; // Default gas price (1 gwei)
 
 // Initialize contract instance
-let contrato = new web3_1.eth.Contract(abiContrato, addressContrato, { // New proxy contract
+const contrato = new web3_1.eth.Contract(abiContrato, addressContrato, { // New proxy contract
   from: WALLET_API, // Default sender address
   //gasPrice: '3000000000' // Default gas price (optional)
 });
