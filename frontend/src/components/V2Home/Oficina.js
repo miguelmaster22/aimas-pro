@@ -1251,9 +1251,6 @@ export default class Oficina extends Component {
                   <a href="#left-leg" aria-describedby="left-leg-info">
                     Left Leg ({this.state.personasIzquierda})
                   </a>
-                </h4>
-
-                <div className="description" id="left-leg-info">
                   <CopyToClipboard text={link}>
                     <button
                       type="button"
@@ -1261,9 +1258,13 @@ export default class Oficina extends Component {
                       onClick={() => this.showModal("Link Copied", "Left referral link copied to clipboard!", "success")}
                       aria-label="Copy left referral link"
                     >
-                      📋 COPY LEFT LINK
+                      📋 COPY LINK
                     </button>
                   </CopyToClipboard>
+                </h4>
+
+                <div className="description" id="left-leg-info">
+                  
 
                   <div className="border-top pt-3">
                     <h6>Available: {ValidationUtils.formatNumber(this.state.puntosEfectivosIzquierda)} pts</h6>
@@ -1295,9 +1296,6 @@ export default class Oficina extends Component {
                   <a href="#right-leg" aria-describedby="right-leg-info">
                     Right Leg ({this.state.personasDerecha})
                   </a>
-                </h4>
-
-                <div className="description" id="right-leg-info">
                   <CopyToClipboard text={link2}>
                     <button
                       type="button"
@@ -1305,9 +1303,13 @@ export default class Oficina extends Component {
                       onClick={() => this.showModal("Link Copied", "Right referral link copied to clipboard!", "success")}
                       aria-label="Copy right referral link"
                     >
-                      📋 COPY RIGHT LINK
+                      📋 COPY LINK
                     </button>
                   </CopyToClipboard>
+                </h4>
+
+                <div className="description" id="right-leg-info">
+                  
 
                   <div className="border-top pt-3">
                     <h6>Available: {ValidationUtils.formatNumber(this.state.puntosEfectivosDerecha)} pts</h6>

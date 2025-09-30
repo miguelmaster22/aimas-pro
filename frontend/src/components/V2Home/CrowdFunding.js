@@ -581,6 +581,7 @@ export default class CrowdFunding extends Component {
     }
 
     // Validate leveling for investment
+    /*
     const leveling = await this.props.contract.binaryProxy.methods
       .leveling(this.props.currentAccount)
       .call({ from: this.props.currentAccount });
@@ -588,7 +589,7 @@ export default class CrowdFunding extends Component {
     if (parseInt(leveling) < 1) {
       this.showModal("Investment Error", "You need proper authorization level to make investments.");
       return;
-    }
+    }*/
 
     // Execute investment
     await TransactionManager.executeTransaction(
