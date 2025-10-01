@@ -560,8 +560,8 @@ export default class Oficina extends Component {
   async getDirectReferrals(wallet) {
     try {
       const [left, right] = await Promise.all([
-        this.props.contract.binaryProxy.methods.hijosLeft(wallet).call({ from: this.props.currentAccount }),
-        this.props.contract.binaryProxy.methods.hijosRight(wallet).call({ from: this.props.currentAccount })
+        this.props.contract.binaryProxy.methods.hijosLeft(wallet,0).call({ from: this.props.currentAccount }),
+        this.props.contract.binaryProxy.methods.hijosRight(wallet,0).call({ from: this.props.currentAccount })
       ]);
       
       return [...left, ...right];

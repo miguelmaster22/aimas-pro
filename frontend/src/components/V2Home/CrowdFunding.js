@@ -104,7 +104,6 @@ export default class CrowdFunding extends Component {
     this.updateState = this.updateState.bind(this);
     this.handleChangeUSDT = this.handleChangeUSDT.bind(this);
     this.handleChangeUSDTResult = this.handleChangeUSDTResult.bind(this);
-    this.migrate = this.migrate.bind(this);
     this.showModal = this.showModal.bind(this);
     this.hideModal = this.hideModal.bind(this);
     this.validateForm = this.validateForm.bind(this);

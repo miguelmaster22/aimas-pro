@@ -230,7 +230,7 @@ async function iniciarAplicacion() {
         console.log(">---- App Ready! -------<"); // App initialization complete
 
         /*test functions*/
-        hacerTakeProfit("0x642974e00445f31c50e7cec34b24bc8b6aefd3de").then(r => console.log(r)).catch(e => console.log(e));
+        //hacerTakeProfit("0x642974e00445f31c50e7cec34b24bc8b6aefd3de").then(r => console.log(r)).catch(e => console.log(e));
       });
   }
   return appReady;
