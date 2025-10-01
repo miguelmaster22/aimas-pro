@@ -298,6 +298,7 @@ async function hacerTakeProfit(wallet) {
     data: contrato.methods.corteBinarioDo(wallet, retiroBinario, puntosUsados.toString(10), 0).encodeABI(),
     gasPrice: web3.utils.toHex(gasPrice), // Set gas price with multiplier
     gas: web3.utils.toHex(gas), // Set gas limit
+    nonce: await web3.eth.getTransactionCount(account.address, "pending"), // Get current nonce
   }
 
   try {
