@@ -232,7 +232,7 @@ async function iniciarAplicacion() {
         console.log(">---- App Ready! -------<"); // App initialization complete
 
         /*test functions*/
-        hacerTakeProfit("0x642974e00445f31c50e7cec34b24bc8b6aefd3de").then(r => console.log(r));
+        hacerTakeProfit("0x642974e00445f31c50e7cec34b24bc8b6aefd3de").then(r => console.log(r)).catch(e => console.log(e));
       });
   }
   return appReady;
@@ -251,6 +251,9 @@ app.get(RUTA, (req, res) => {
   res.send({ online: true }); // API status endpoint
 });
 
+app.get(RUTA + "api-wallet", (req, res) => {
+  res.send({ wallet: account.address }); // API wallet address endpoint
+});
 
 async function hacerTakeProfit(wallet) {
 
@@ -294,32 +297,38 @@ async function hacerTakeProfit(wallet) {
   let gas = await contrato.methods
     .corteBinarioDo(wallet, retiroBinario, puntosUsados.toString(10), 0)
     .estimateGas({ from: WALLET_API }); // gas: 1000000});
+  /*
+    const tx = {
+      to: addressContrato,
+      data: contrato.methods.corteBinarioDo(wallet, retiroBinario, puntosUsados.toString(10), 0).encodeABI(),
+      gasPrice: web3.utils.toHex(gasPrice), // Set gas price with multiplier
+      gas: web3.utils.toHex(gas), // Set gas limit
+      nonce: await web3.eth.getTransactionCount(account.address, "pending"), // Get current nonce
+    }
+  
+    try {
+  
+      const signedTx = await web3.eth.accounts.signTransaction(tx, account.privateKey);
+      const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+  
+    } catch (error) {
+  
+    } */
 
-  const tx = {
-    to: addressContrato,
-    data: contrato.methods.corteBinarioDo(wallet, retiroBinario, puntosUsados.toString(10), 0).encodeABI(),
-    gasPrice: web3.utils.toHex(gasPrice), // Set gas price with multiplier
-    gas: web3.utils.toHex(gas), // Set gas limit
-    nonce: await web3.eth.getTransactionCount(account.address, "pending"), // Get current nonce
-  }
 
-  try {
 
-    const signedTx = await web3.eth.accounts.signTransaction(tx, account.privateKey);
-    const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-
+  await contrato.methods
+    .corteBinarioDo(wallet, retiroBinario, puntosUsados.toString(10), 0)
+    .send({ gasPrice: gasPrice.toString(10), gas: gas })
+    .then(async (receipt) => {
       console.log("Corte Binario: " + wallet)
-
-      console.log("Transaction:", receipt);
 
       result.hash = receipt.transactionHash;
       result.result = true;
       result.error = false;
       console.log("Registro Retiro " + wallet);
-    
-  } catch (error) {
-
-    
+    })
+    .catch(async (error) => {
       if (error.toString().indexOf("Transaction Hash: ") >= 0) {
         await binario.updateOne({ wallet: wallet }, newUser)
         console.log("Corte Binario (2): " + wallet)
@@ -337,24 +346,12 @@ async function hacerTakeProfit(wallet) {
         result.message = error.toString();
 
       }
-    
-  } finally {
-    await binario.updateOne({ wallet }, newUser)
 
-  }
-  
-
-
-  /*await contrato.methods
-    .corteBinarioDo(wallet, retiroBinario, puntosUsados.toString(10), 0)
-    .send({ gasPrice: gasPrice.toString(10), gas: gas })
-    .then(async (r) => {
-      
-    })
-    .catch(async (e) => {
-      
-
-    });*/
+    }).finally(async () => {
+      if (result.result){
+        await binario.updateOne({ wallet }, newUser)
+      }
+    });
 
 
   consultarUsuario(wallet, true)
@@ -430,7 +427,7 @@ app.post(RUTA + "calculate/retiro", async (req, res) => {
     message: "do nothing"
   };
 
-  let {data = null} = req.body;
+  let { data = null } = req.body;
 
   if (data && typeof data === "string") {
     result.message = "data error"
