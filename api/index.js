@@ -101,6 +101,9 @@ app.use(bodyParser.json()); // Parse JSON bodies
 
 const port = process.env.PORT || "8000"; // Server port
 
+const RUTA = "/api/v1/";
+
+
 // Contract configuration
 const abiContrato = require("./binaryV2.js"); // ABI for V2 binary contract
 const addressContrato = "0xDF06438ab07c807fe3c1fBF1437DEf79BA8c1232"//"0x86bce12014a6c721156C536Be22DA7F30b6F33C1"; // Proxy contract address
@@ -110,15 +113,16 @@ const WALLET_API = "0x6b78C6d2031600dcFAd295359823889b2dbAfd1B"; // API wallet a
 const RED = process.env.APP_RED || "https://bsc-dataseed.binance.org/"; // Primary RPC endpoint
 let redes = ["https://bsc-dataseed1.binance.org/", "https://bsc-dataseed2.binance.org/", "https://bsc-dataseed3.binance.org/", "https://bsc-dataseed4.binance.org/"]; // Backup RPC endpoints
 
-let account_1_priv = "0x" + process.env.REACT_APP_PRIVATE_KY || null; // Private key for transactions
 
 const KEY = process.env.REACT_APP_ENCR_STO || "AAAAAAAAAAAAAAAA";
 const cryptr = new Cryptr(KEY);
 const TOKEN = process.env.REACT_APP_API_KEY || "1234567890";
 
-const RUTA = "/api/v1/";
 
-let web3 = new Web3(RED); // demas funciones
+const account_1_priv = "0x" + process.env.REACT_APP_PRIVATE_KY || null; // Private key for transactions
+
+const web3 = new Web3(RED); // demas funciones
+
 let web3_1 = new Web3(redes[0]); // contrato nuevo
 let web3_2 = new Web3(redes[1]); // contrato viejo
 let web3_3 = new Web3(redes[2]);
@@ -134,7 +138,9 @@ if (account_1_priv === null) {
 }
 
 // Add private key to Web3 wallets for transaction signing
-web3.eth.accounts.wallet.add(account_1_priv);
+const account = web3.eth.accounts.privateKeyToAccount(account_1_priv)
+
+web3.eth.accounts.wallet.add(account)
 web3_1.eth.accounts.wallet.add(account_1_priv);
 web3_2.eth.accounts.wallet.add(account_1_priv);
 web3_3.eth.accounts.wallet.add(account_1_priv);
@@ -288,26 +294,35 @@ async function hacerTakeProfit(wallet) {
 
   }
 
-
   let gas = await contrato.methods
     .corteBinarioDo(wallet, retiroBinario, puntosUsados.toString(10), 0)
     .estimateGas({ from: WALLET_API }); // gas: 1000000});
 
-  await contrato.methods
-    .corteBinarioDo(wallet, retiroBinario, puntosUsados.toString(10), 0)
-    .send({ gasPrice: gasPrice.toString(10), gas: gas })
-    .then(async (r) => {
-      await binario.updateOne({ wallet }, newUser)
+  const tx = {
+    to: addressContrato,
+    data: contrato.methods.corteBinarioDo(wallet, retiroBinario, puntosUsados.toString(10), 0).encodeABI(),
+    gasPrice: web3.utils.toHex(gasPrice), // Set gas price with multiplier
+    gas: web3.utils.toHex(gas), // Set gas limit
+  }
+
+  try {
+
+    const signedTx = await web3.eth.accounts.signTransaction(tx, account.privateKey);
+    const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+
       console.log("Corte Binario: " + wallet)
 
-      result.hash = r.transactionHash;
+      console.log("Transaction:", receipt);
+
+      result.hash = receipt.transactionHash;
       result.result = true;
       result.error = false;
       console.log("Registro Retiro " + wallet);
-    })
-    .catch(async (e) => {
-      let error = e.toString()
-      if (error.indexOf("Transaction Hash: ") >= 0) {
+    
+  } catch (error) {
+
+    
+      if (error.toString().indexOf("Transaction Hash: ") >= 0) {
         await binario.updateOne({ wallet: wallet }, newUser)
         console.log("Corte Binario (2): " + wallet)
 
@@ -324,8 +339,24 @@ async function hacerTakeProfit(wallet) {
         result.message = error;
 
       }
+    
+  } finally {
+    await binario.updateOne({ wallet }, newUser)
 
-    });
+  }
+  
+
+
+  /*await contrato.methods
+    .corteBinarioDo(wallet, retiroBinario, puntosUsados.toString(10), 0)
+    .send({ gasPrice: gasPrice.toString(10), gas: gas })
+    .then(async (r) => {
+      
+    })
+    .catch(async (e) => {
+      
+
+    });*/
 
 
   consultarUsuario(wallet, true)

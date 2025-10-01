@@ -10,6 +10,9 @@ import cons from "./cons";
 
 import abiToken from "./abi/token";
 import abiBinarioProxy from "./abi/binary_proxy";
+import abiMilionnaire from "./abi/Millionnaire.abi";
+
+console.log(abiMilionnaire);
 
 // Configuration constants
 const addressToken = cons.TOKEN;
