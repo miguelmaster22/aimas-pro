@@ -99,7 +99,6 @@ const RUTA = "/api/v1/";
 // Contract configuration
 const abiContrato = require("./binaryV2.js"); // ABI for V2 binary contract
 const addressContrato = "0xDF06438ab07c807fe3c1fBF1437DEf79BA8c1232"//"0x86bce12014a6c721156C536Be22DA7F30b6F33C1"; // Proxy contract address
-const WALLET_API = "0x6b78C6d2031600dcFAd295359823889b2dbAfd1B"; // API wallet address
 
 // Blockchain network configuration
 const RED = process.env.APP_RED || "https://bsc-dataseed.binance.org/"; // Primary RPC endpoint
@@ -109,7 +108,6 @@ let redes = ["https://bsc-dataseed1.binance.org/", "https://bsc-dataseed2.binanc
 const KEY = process.env.REACT_APP_ENCR_STO || "AAAAAAAAAAAAAAAA";
 const cryptr = new Cryptr(KEY);
 const TOKEN = process.env.REACT_APP_API_KEY || "1234567890";
-
 
 const account_1_priv = "0x" + process.env.REACT_APP_PRIVATE_KY || null; // Private key for transactions
 
@@ -144,7 +142,7 @@ let gasPrice = "1000000000"; // Default gas price (1 gwei)
 
 // Initialize contract instance
 const contrato = new web3_1.eth.Contract(abiContrato, addressContrato, { // New proxy contract
-  from: WALLET_API, // Default sender address
+  from: account.address, // Default sender address
   //gasPrice: '3000000000' // Default gas price (optional)
 });
 
@@ -160,7 +158,7 @@ web3_3.eth
 
 nonce(0); // Initialize nonce
 
-web3_3.eth.getBalance(WALLET_API).then(async (r) => {
+web3_3.eth.getBalance(account.address).then(async (r) => {
   r = new BigNumber(r).shiftedBy(-18)
   console.log("balance: " + r.toString(10) + " BNB")
 
@@ -168,7 +166,7 @@ web3_3.eth.getBalance(WALLET_API).then(async (r) => {
     let evio = r.minus(0.2)
     /*
         let rawTransaction = {
-          "from": WALLET_API,
+          "from": account.address,
           "nonce": await nonce(0),
           "gasPrice": web3.utils.toHex(gasPrice * 1e9),
           "gasLimit": web3.utils.toHex(gasLimit),
@@ -183,7 +181,7 @@ web3_3.eth.getBalance(WALLET_API).then(async (r) => {
 })
 
 async function nonce() {
-  let activo = await web3_3.eth.getTransactionCount(WALLET_API, "pending"); // Get pending nonce from network
+  let activo = await web3_3.eth.getTransactionCount(account.address, "pending"); // Get pending nonce from network
 
   gasPrice = new BigNumber(await web3_3.eth.getGasPrice()); // Update current gas price
 
@@ -296,7 +294,7 @@ async function hacerTakeProfit(wallet) {
 
   let gas = await contrato.methods
     .corteBinarioDo(wallet, retiroBinario, puntosUsados.toString(10), 0)
-    .estimateGas({ from: WALLET_API }); // gas: 1000000});
+    .estimateGas({ from: account.address }); // gas: 1000000});
   /*
     const tx = {
       to: addressContrato,
@@ -399,7 +397,7 @@ async function estimateRetiro(wallet) {
 
   retBinario = new BigNumber(retBin)
 
-  await contrato.methods.corteBinarioDo(wallet, retBinario.toString(10), reclamados.plus(user.lReclamados).toString(10), "0").estimateGas({ from: WALLET_API })
+  await contrato.methods.corteBinarioDo(wallet, retBinario.toString(10), reclamados.plus(user.lReclamados).toString(10), "0").estimateGas({ from: account.address })
     .then((r) => {
       result.result = true;
       result.gas = new BigNumber(r).times(gasPrice).times(factorBlock);
