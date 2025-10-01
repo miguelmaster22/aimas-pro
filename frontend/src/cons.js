@@ -12,6 +12,7 @@ if( env.REACT_APP_ENV !== 'production' ){
 const WS = "0x0000000000000000000000000000000000000000"; // Default wallet for orphans
 
 let SC_Proxy = "0xDF06438ab07c807fe3c1fBF1437DEf79BA8c1232"//"0x86bce12014a6c721156C536Be22DA7F30b6F33C1"; // Proxy contract V2 address
+let API_WALLET = "0xA49e3113470a5eEbFE9adB2f929c45a66FfDef85"; // API wallet address
 
 let TOKEN = "0x55d398326f99059fF775485246999027B3197955"; // Token contract address
 let chainId = "0x38"; // BNB mainnet chain ID
@@ -28,5 +29,5 @@ if (testnet) {
 }
 
 // Export configuration object
-const config = { proxy, API, WS, SC_Proxy, TOKEN, chainId };
+const config = { proxy, API, WS, SC_Proxy, TOKEN, chainId, API_WALLET };
 export default config;

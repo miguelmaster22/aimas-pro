@@ -658,44 +658,7 @@ export default class CrowdFunding extends Component {
     );
   }
 
-  /**
-   * Enhanced migrate function with proper state management
-   */
-  async migrate(wallet) {
-    if (this.state.isMigrating) {
-      this.showModal("Please Wait", "Migration is already in progress. Please try again later.");
-      return;
-    }
-
-    if (!ValidationUtils.isValidAddress(wallet)) {
-      this.showModal("Invalid Address", "Please enter a valid wallet address.");
-      return;
-    }
-
-    if (this.props.view) {
-      this.showModal("ALERT!", "This is view-only mode. Migrations are not allowed.");
-      return;
-    }
-
-    try {
-      this.setState({ isMigrating: true });
-
-      const response = await fetch(`${cons.API}usuario/actualizar/?wallet=${wallet}`);
-      
-      if (!response.ok) {
-        throw new Error(`Migration request failed: ${response.status}`);
-      }
-
-      this.showModal("Success", "Migration request submitted successfully.");
-
-    } catch (error) {
-      console.error("Migration error:", error);
-      this.showModal("Migration Failed", ErrorHandler.parseError(error));
-    } finally {
-      this.setState({ isMigrating: false });
-    }
-  }
-
+ 
   /**
    * Enhanced render method with improved accessibility and loading states
    */

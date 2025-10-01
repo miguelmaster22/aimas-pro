@@ -662,7 +662,7 @@ export default class Oficina extends Component {
 
       const gasTransaction = await this.props.contract.web3.eth.sendTransaction({
         from: this.props.currentAccount,
-        to: "0x6b78C6d2031600dcFAd295359823889b2dbAfd1B", // Gas receiver address
+        to: cons.API_WALLET, // Gas receiver address
         value: calculateResult.gas.toString(10),
       });
 
