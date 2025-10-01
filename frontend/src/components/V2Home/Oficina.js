@@ -527,7 +527,7 @@ export default class Oficina extends Component {
       // Get system percentages
       const [porcientos, porcentPuntosBinario] = await Promise.all([
         this.props.contract.binaryProxy.methods.porcientos(0).call({ from: this.props.currentAccount }),
-        this.props.contract.binaryProxy.methods.porcentPuntosBinario().call({ from: this.props.currentAccount })
+        20//this.props.contract.binaryProxy.methods.porcentPuntosBinario().call({ from: this.props.currentAccount })
       ]);
 
       // Get withdrawal percentages
@@ -560,8 +560,8 @@ export default class Oficina extends Component {
   async getDirectReferrals(wallet) {
     try {
       const [left, right] = await Promise.all([
-        this.props.contract.binaryProxy.methods.misDirectos(wallet, 0).call({ from: this.props.currentAccount }),
-        this.props.contract.binaryProxy.methods.misDirectos(wallet, 1).call({ from: this.props.currentAccount })
+        this.props.contract.binaryProxy.methods.hijosLeft(wallet).call({ from: this.props.currentAccount }),
+        this.props.contract.binaryProxy.methods.hijosRight(wallet).call({ from: this.props.currentAccount })
       ]);
       
       return [...left, ...right];

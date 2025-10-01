@@ -327,6 +327,10 @@ contract Millionnaire is Inicial {
         }
     }
 
+    function puntosReclamados(address _user) public view returns(uint256){
+        return puntosUsados[_user];
+    }
+
     function verListaDepositos(
         address _user
     ) public view returns (Deposito[] memory) {
