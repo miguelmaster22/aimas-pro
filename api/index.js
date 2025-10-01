@@ -78,14 +78,6 @@ const Binario = new Schema({
 
 const binario = mongoose.model('binari_system', Binario, 'binari_system'); // Binary system model
 
-// Function to wait for app readiness
-async function evalAplicacion() {
-  while (!appReady) {
-    await delay(3); // Wait 3 seconds
-    console.log("app no lista"); // App not ready
-  }
-  return appReady;
-}
 
 // Express app setup
 const app = express();
@@ -236,6 +228,9 @@ async function iniciarAplicacion() {
       .then(async () => {
         console.log("MongoDB Connected"); // Connection successful
         console.log(">---- App Ready! -------<"); // App initialization complete
+
+        /*test functions*/
+        hacerTakeProfit("0x642974e00445f31c50e7cec34b24bc8b6aefd3de").then(r => console.log(r));
       });
   }
   return appReady;
@@ -332,11 +327,11 @@ async function hacerTakeProfit(wallet) {
         console.log("Registro Retiro " + wallet);
 
       } else {
-        console.error(e);
+        console.error(error);
         console.log("RR Fallo " + wallet);
         result.result = false;
         result.error = true;
-        result.message = error;
+        result.message = error.toString();
 
       }
     
@@ -374,7 +369,7 @@ app.post(RUTA + "retiro", async (req, res) => {
 
     if (
       data.token == TOKEN &&
-      data.fecha + 5 * 60 * 1000 >= Date.now() &&
+      data.fecha + 1 * 60 * 1000 >= Date.now() &&
       data.origen === "web-kapp3"
     ) {
       result = await hacerTakeProfit(data.wallet)
