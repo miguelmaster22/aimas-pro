@@ -124,13 +124,15 @@ let web3_3 = new Web3(redes[2]);
 if (account_1_priv === null) {
   console.log("no hay llave privada")
   let newAccount = web3.eth.accounts.create();
-  console.log("nueva cuenta: ", newAccount.address)
-  console.log("nueva llave: ", newAccount.privateKey)
+  console.log("Nueva cuenta API: ", newAccount.address)
+  console.log("Nueva llave API: ", newAccount.privateKey)
   account_1_priv = newAccount.privateKey; //
 }
 
 // Add private key to Web3 wallets for transaction signing
 const account = web3.eth.accounts.privateKeyToAccount(account_1_priv)
+
+console.log("API Wallet: ", account.address)
 
 web3.eth.accounts.wallet.add(account)
 web3_1.eth.accounts.wallet.add(account_1_priv);
