@@ -492,6 +492,8 @@ export default class Oficina extends Component {
       // Get direct referrals for current user
       niveles[0] = await this.getDirectReferrals(this.props.currentAccount);
 
+      console.log("referrals:", niveles);
+
       // Build subsequent levels
       for (let level = 1; level < niveles.length; level++) {
         const promises = niveles[level - 1].map(wallet => this.getDirectReferrals(wallet));
@@ -783,7 +785,7 @@ export default class Oficina extends Component {
       // Get user's ranking data
       const pRanked = new BigNumber(
         await this.props.contract.binaryProxy.methods
-          .puntosUsados(this.props.currentAccount)
+          .puntosReclamados(this.props.currentAccount)
           .call({ from: this.props.currentAccount })
       ).shiftedBy(-18).dp(2);
 

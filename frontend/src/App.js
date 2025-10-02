@@ -9,7 +9,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import cons from "./cons";
 
 import abiToken from "./abi/token";
-import abiBinarioProxy from "./abi/binary_proxy";
+//import abiBinarioProxy from "./abi/binary_proxy";
 import abiMilionnaire from "./abi/Millionnaire.abi";
 
 console.log(abiMilionnaire);
@@ -83,7 +83,7 @@ const App = () => {
       
       // Initialize contracts
       const contractToken = new web3.eth.Contract(abiToken, addressToken);
-      const binaryProxy = new web3.eth.Contract(abiBinarioProxy, cons.SC_Proxy);
+      const binaryProxy = new web3.eth.Contract(abiMilionnaire, cons.SC_Proxy);
 
       // Get admin level
       const cuenta = accounts[0];

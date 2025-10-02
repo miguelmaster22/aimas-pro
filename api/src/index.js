@@ -97,7 +97,7 @@ const RUTA = "/api/v1/";
 
 
 // Contract configuration
-const abiContrato = require("./binaryV2.js"); // ABI for V2 binary contract
+const abiContrato = require("./abi/binaryV2.js"); // ABI for V2 binary contract
 const addressContrato = "0xDF06438ab07c807fe3c1fBF1437DEf79BA8c1232"//"0x86bce12014a6c721156C536Be22DA7F30b6F33C1"; // Proxy contract address
 
 // Blockchain network configuration
