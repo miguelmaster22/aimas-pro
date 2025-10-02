@@ -199,8 +199,8 @@ export default class Oficina extends Component {
     this.updateInterval = setInterval(() => {
       this.fetchInvestorData();
       this.fetchNetworkData();
-      this.calculateRanking();
-      this.generateReferralLinks();
+      //this.calculateRanking();
+      //this.generateReferralLinks();
     }, 3000);
   }
 
@@ -300,6 +300,8 @@ export default class Oficina extends Component {
    * Enhanced investor data fetching
    */
   async fetchInvestorData() {
+
+    console.log("Fetching investor data...");
     try {
       if (!this.props.contract?.binaryProxy || !this.props.currentAccount) {
         return;
@@ -477,6 +479,7 @@ export default class Oficina extends Component {
    * Enhanced network data fetching
    */
   async fetchNetworkData() {
+    console.log("Fetching network data...");
     try {
       if (!this.props.currentAccount || !this.props.contract?.binaryProxy) {
         return;
