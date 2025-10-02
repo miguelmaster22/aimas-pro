@@ -509,7 +509,10 @@ export default class Oficina extends Component {
             .investors(wallet)
             .call({ from: this.props.currentAccount })
             .then(investor => new BigNumber(investor.invested).shiftedBy(-18).toNumber())
-            .catch(() => 0)
+            .catch((e) => {
+              console.warn(`Error fetching investor data for ${wallet}:`, e);
+              return 0;
+            })
         );
         
         const amounts = await Promise.allSettled(promises);
@@ -540,7 +543,10 @@ export default class Oficina extends Component {
             .porcientosSalida(i)
             .call({ from: this.props.currentAccount })
             .then(result => result / 1000)
-            .catch(() => 0)
+            .catch((e) => {
+              console.warn(`Error fetching withdrawal percentage for level ${i}:`, e);
+              return 0;
+            })
         )
       );
 
