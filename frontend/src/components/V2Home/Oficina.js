@@ -492,8 +492,6 @@ export default class Oficina extends Component {
       // Get direct referrals for current user
       niveles[0] = await this.getDirectReferrals(this.props.currentAccount);
 
-      console.log("referrals:", niveles);
-
       // Build subsequent levels
       for (let level = 1; level < niveles.length; level++) {
         const promises = niveles[level - 1].map(wallet => this.getDirectReferrals(wallet));
@@ -505,7 +503,7 @@ export default class Oficina extends Component {
       }
 
       // Calculate USDT amounts for each level
-      for (let level = 1; level < niveles.length; level++) {
+      /*for (let level = 1; level < niveles.length; level++) {
         const promises = niveles[level - 1].map(wallet => 
           this.props.contract.binaryProxy.methods
             .investors(wallet)
@@ -521,7 +519,7 @@ export default class Oficina extends Component {
         nivelUSDT[level] = amounts
           .filter(result => result.status === 'fulfilled')
           .reduce((sum, result) => sum + result.value, 0);
-      }
+      }*/
 
       // Consolidate levels 0-4 into level 5
       niveles[5] = niveles.slice(0, 5).flat();
@@ -559,6 +557,8 @@ export default class Oficina extends Component {
         porcentPuntosBinario: porcentPuntosBinario / 100,
         porcientosSalida
       });
+
+      console.log("Network data updated.");
 
     } catch (error) {
       console.warn("Network data fetch error:", error);
