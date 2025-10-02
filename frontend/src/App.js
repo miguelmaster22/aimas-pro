@@ -9,10 +9,9 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import cons from "./cons";
 
 import abiToken from "./abi/token";
-//import abiBinarioProxy from "./abi/binary_proxy";
-import abiMilionnaire from "./abi/Millionnaire.abi";
+import abiBinarioProxy from "./abi/binary_proxy";
+//import abiMilionnaire from "./abi/Millionnaire.abi";
 
-console.log(abiMilionnaire);
 
 // Configuration constants
 const addressToken = cons.TOKEN;
@@ -83,7 +82,11 @@ const App = () => {
       
       // Initialize contracts
       const contractToken = new web3.eth.Contract(abiToken, addressToken);
-      const binaryProxy = new web3.eth.Contract(abiMilionnaire, cons.SC_Proxy);
+      const binaryProxy = new web3.eth.Contract(abiBinarioProxy, cons.SC_Proxy);
+
+      if (!contractToken || !binaryProxy) {
+        throw new Error("Failed to initialize contracts");
+      }
 
       // Get admin level
       const cuenta = accounts[0];
